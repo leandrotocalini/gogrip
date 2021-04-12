@@ -28,7 +28,11 @@ func GetFiles(rootPath string) <-chan string {
 	return out
 }
 
-func SearchFilesInChannel(filesInChan <-chan string, query string) <-chan Found {
+func main() {
+	flag.Parse()
+	query := flag.Arg(0)
+	rootPath := flag.Arg(1)
+	filesInChan := GetFiles(rootPath)
 	out := make(chan Found)
 	go func() {
 		var wg sync.WaitGroup
@@ -39,16 +43,7 @@ func SearchFilesInChannel(filesInChan <-chan string, query string) <-chan Found 
 		wg.Wait()
 		close(out)
 	}()
-	return out
-}
-
-func main() {
-	flag.Parse()
-	query := flag.Arg(0)
-	rootPath := flag.Arg(1)
-	filesInChan := GetFiles(rootPath)
-	c := SearchFilesInChannel(filesInChan, query)
-	for elem := range c {
+	for elem := range out {
 		View(elem)
 	}
 }
