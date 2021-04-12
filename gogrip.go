@@ -15,17 +15,17 @@ type Found struct {
 }
 
 func GetFiles(rootPath string) <-chan string {
-	out := make(chan string)
+	filesInChan := make(chan string)
 	go func() {
 		filepath.Walk(rootPath, func(path string, file os.FileInfo, err error) error {
 			if !file.IsDir() {
-				out <- path
+				filesInChan <- path
 			}
 			return nil
 		})
-		close(out)
+		close(filesInChan)
 	}()
-	return out
+	return filesInChan
 }
 
 func main() {
@@ -33,17 +33,17 @@ func main() {
 	query := flag.Arg(0)
 	rootPath := flag.Arg(1)
 	filesInChan := GetFiles(rootPath)
-	out := make(chan Found)
+	foundChannel := make(chan Found)
 	go func() {
 		var wg sync.WaitGroup
 		for fpath := range filesInChan {
 			wg.Add(1)
-			go SearchInFile(query, fpath, out, &wg)
+			go SearchInFile(query, fpath, foundChannel, &wg)
 		}
 		wg.Wait()
-		close(out)
+		close(foundChannel)
 	}()
-	for elem := range out {
+	for elem := range foundChannel {
 		View(elem)
 	}
 }

@@ -50,7 +50,7 @@ func PrintBlock(doc []string, first int, last int, lineNumbers map[int]bool) {
 	highlight := boldRed.SprintFunc()
 	for i := first; i <= last; i++ {
 		_, ok := lineNumbers[i]
-		fmt.Printf("%s\t", normal(i, "|"))
+		fmt.Printf("%s\t", normal(i + 1, "|"))
 		if !ok {
 			fmt.Printf("%s\n", normal(doc[i]))
 		} else {
