@@ -5,7 +5,13 @@ import (
 	"github.com/fatih/color"
 )
 
-func defineBlock(doc []string, lineNumber int) (int, int) {
+type Block struct {
+	FirstLine int
+	LastLine  int
+	Lines     map[int]bool
+}
+
+func DefineBlock(doc []string, lineNumber int) (int, int) {
 	ff := false
 	fl := false
 	first := lineNumber
@@ -37,46 +43,45 @@ func defineBlock(doc []string, lineNumber int) (int, int) {
 	return first, last
 }
 
-func PrintLine(doc []string, first int, last int, lineNumbers map[int]bool) {
+func PrintBlock(doc []string, first int, last int, lineNumbers map[int]bool) {
 	normal := color.New(color.FgWhite).SprintFunc()
-	highlight := color.New(color.FgRed).SprintFunc()
+	red := color.New(color.FgMagenta)
+	boldRed := red.Add(color.Bold)
+	highlight := boldRed.SprintFunc()
 	for i := first; i <= last; i++ {
 		_, ok := lineNumbers[i]
+		fmt.Printf("%s\t", normal(i, "|"))
 		if !ok {
-			fmt.Printf("%s - %s \n", normal(i), normal(doc[i]))
+			fmt.Printf("%s\n", normal(doc[i]))
 		} else {
-			fmt.Printf("%s - %s \n", normal(i), highlight(doc[i]))
+			fmt.Printf("%s\n", highlight(doc[i]))
 		}
 	}
 }
 
-type ViewStruct struct {
-	First int
-	Last  int
-	Lines map[int]bool
-}
-
-func printTitle(f Found) {
+func PrintInfo(f Found) {
 	fmt.Println("\n\n\n")
-	red := color.New(color.FgRed)
-	boldRed := red.Add(color.Bold)
-	boldRed.Println(f.FilePath)
+	red := color.New(color.FgWhite)
+	boldRed := red.Add(color.Underline)
+	boldRed.Printf("%s:\n\n", f.FilePath)
 
 }
 
 func View(f Found) {
-	printTitle(f)
-	h := make(map[string]*ViewStruct)
+	PrintInfo(f)
+	blocks := make(map[string]*Block)
 	for _, val := range f.LineNumbers {
-		first, last := defineBlock(f.Content, val)
+		first, last := DefineBlock(f.Content, val)
 		key := fmt.Sprintf("%d-%d", first, last)
-		_, ok := h[key]
+		_, ok := blocks[key]
 		if !ok {
-			h[key] = &ViewStruct{First: first, Last: last, Lines: make(map[int]bool)}
+			blocks[key] = &Block{FirstLine: first, LastLine: last, Lines: make(map[int]bool)}
 		}
-		h[key].Lines[val] = true
+		blocks[key].Lines[val] = true
 	}
-	for _, v := range h {
-		PrintLine(f.Content, v.First, v.Last, v.Lines)
+	for _, v := range blocks {
+		PrintBlock(f.Content, v.FirstLine, v.LastLine, v.Lines)
+		fmt.Println("\n")
+
 	}
 }
