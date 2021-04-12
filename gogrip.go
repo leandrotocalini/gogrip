@@ -62,11 +62,14 @@ func PrintLine(doc []string, lineNumber int) {
 func (f *Found) Print() {
 	fmt.Println("#########################")
 	fmt.Println(f.FilePath)
+	h := make(map[string][]int)
 	for _, val := range f.LineNumbers {
-		fmt.Println("Match:")
-		PrintLine(f.Content, val)
-		fmt.Println()
+		first, last := findEndOfParraph(f.Content, val)
+		key := fmt.Sprint(first, "-", last)
+		h[key] = append(h[key], val)
 	}
+	fmt.Println(h)
+
 }
 
 func SearchInFile(query string, filePath string, c chan Found, wg *sync.WaitGroup) {
