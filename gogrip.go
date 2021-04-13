@@ -28,6 +28,13 @@ func GetFiles(rootPath string) <-chan string {
 	return filesInChan
 }
 
+func readFileChannel(query string, filesInChan <-chan string, foundChannel chan Found, wg *sync.WaitGroup){
+	defer wg.Done()
+	for fpath := range filesInChan {
+		SearchInFile(query, fpath, foundChannel)
+	}
+}
+
 func main() {
 	flag.Parse()
 	query := flag.Arg(0)
@@ -36,9 +43,9 @@ func main() {
 	foundChannel := make(chan Found)
 	go func() {
 		var wg sync.WaitGroup
-		for fpath := range filesInChan {
+		for i := 0; i <= 5; i++ {
 			wg.Add(1)
-			go SearchInFile(query, fpath, foundChannel, &wg)
+			go readFileChannel(query, filesInChan, foundChannel, &wg)
 		}
 		wg.Wait()
 		close(foundChannel)

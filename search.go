@@ -4,11 +4,9 @@ import (
 	"bufio"
 	"os"
 	"strings"
-	"sync"
 )
 
-func SearchInFile(query string, filePath string, c chan Found, wg *sync.WaitGroup) {
-	defer wg.Done()
+func SearchInFile(query string, filePath string, c chan Found) {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return
