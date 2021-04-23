@@ -4,16 +4,23 @@ import (
 	"bufio"
 	"github.com/leandrotocalini/gogrip/ds"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 )
 
-func Filter(query string, filePath string, c chan ds.Found) {
+var workers int
+
+func init() {
+	workers = runtime.NumCPU()
+}
+
+func FilterFile(query string, filePath string) ds.Found {
+	found := ds.Found{Match: false, FilePath: filePath}
 	file, err := os.Open(filePath)
 	if err != nil {
-		return
+		return found
 	}
-	found := ds.Found{Match: false, FilePath: filePath}
 	scanner := bufio.NewScanner(file)
 	for i := 0; scanner.Scan(); i++ {
 		line := string(scanner.Text())
@@ -24,6 +31,11 @@ func Filter(query string, filePath string, c chan ds.Found) {
 		}
 	}
 	file.Close()
+	return found
+}
+
+func Filter(query string, filePath string, c chan ds.Found) {
+	found := FilterFile(query, filePath)
 	if found.Match {
 		c <- found
 	}
@@ -38,7 +50,7 @@ func readFileChannel(query string, filesInChan <-chan string, foundChannel chan 
 
 func FilterFileIn(query string, filesInChan <-chan string, foundChannel chan ds.Found) {
 	var wg sync.WaitGroup
-	for i := 0; i <= 5; i++ {
+	for i := 0; i <= workers; i++ {
 		wg.Add(1)
 		go readFileChannel(query, filesInChan, foundChannel, &wg)
 	}
