@@ -1,8 +1,10 @@
-package main
+package formatter
 
 import (
 	"fmt"
 	"github.com/fatih/color"
+	"github.com/leandrotocalini/gogrip/ds"
+
 )
 
 type Block struct {
@@ -59,7 +61,7 @@ func PrintBlock(doc []string, first int, last int, lineNumbers map[int]bool) {
 	}
 }
 
-func PrintInfo(f Found) {
+func PrintInfo(f ds.Found) {
 	fmt.Println("\n\n\n")
 	red := color.New(color.FgWhite)
 	boldRed := red.Add(color.Underline)
@@ -67,7 +69,7 @@ func PrintInfo(f Found) {
 
 }
 
-func View(f Found) {
+func View(f ds.Found) {
 	PrintInfo(f)
 	blocks := make(map[string]*Block)
 	for _, val := range f.LineNumbers {
