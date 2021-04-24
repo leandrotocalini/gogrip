@@ -4,7 +4,7 @@ import (
 	"flag"
 	"github.com/leandrotocalini/gogrip/fget"
 	"github.com/leandrotocalini/gogrip/filter"
-	"github.com/leandrotocalini/gogrip/formatter"
+	"github.com/leandrotocalini/gogrip/viewer"
 )
 
 func main() {
@@ -13,7 +13,7 @@ func main() {
 	rootPath := flag.Arg(1)
 	foundChannel := make(chan filter.Found)
 	go filter.FileInChannel(query, fget.Get(rootPath), foundChannel)
-	for elem := range foundChannel {
-		formatter.View(elem)
+	for f := range foundChannel {
+		viewer.View(f)
 	}
 }
