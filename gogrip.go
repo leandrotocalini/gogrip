@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"github.com/leandrotocalini/gogrip/ds"
 	"github.com/leandrotocalini/gogrip/filter"
 	"github.com/leandrotocalini/gogrip/formatter"
 	"net/http"
@@ -50,8 +49,8 @@ func main() {
 	query := flag.Arg(0)
 	rootPath := flag.Arg(1)
 	filesInChan := GetFiles(rootPath)
-	foundChannel := make(chan ds.Found)
-	go filter.FilterFileIn(query, filesInChan, foundChannel)
+	foundChannel := make(chan filter.Found)
+	go filter.FileInChannel(query, filesInChan, foundChannel)
 	for elem := range foundChannel {
 		formatter.View(elem)
 	}
