@@ -4,8 +4,8 @@ import (
 	"bufio"
 	"github.com/leandrotocalini/gogrip/ds"
 	"os"
+	"regexp"
 	"runtime"
-	"strings"
 	"sync"
 )
 
@@ -15,44 +15,44 @@ func init() {
 	workers = runtime.NumCPU()
 }
 
-func FilterFile(query string, filePath string) ds.Found {
-	found := ds.Found{Match: false, FilePath: filePath}
-	file, err := os.Open(filePath)
-	if err != nil {
-		return found
-	}
-	scanner := bufio.NewScanner(file)
+func FilterFile(r *regexp.Regexp, filePath string, scanner *bufio.Scanner) ds.Found {
+	found := ds.Found{Match: false, FilePath: filePath, Regexp: r}
 	for i := 0; scanner.Scan(); i++ {
 		line := string(scanner.Text())
 		found.Content = append(found.Content, line)
-		if strings.Contains(line, query) {
+		if r.MatchString(line) {
 			found.Match = true
 			found.LineNumbers = append(found.LineNumbers, i)
 		}
 	}
-	file.Close()
 	return found
 }
 
-func Filter(query string, filePath string, c chan ds.Found) {
-	found := FilterFile(query, filePath)
+func Filter(r *regexp.Regexp, filePath string, c chan ds.Found) {
+	file, _ := os.Open(filePath)
+	scanner := bufio.NewScanner(file)
+	found := FilterFile(r, filePath, scanner)
 	if found.Match {
 		c <- found
 	}
+	file.Close()
+
 }
 
-func readFileChannel(query string, filesInChan <-chan string, foundChannel chan ds.Found, wg *sync.WaitGroup) {
+func readFileChannel(r *regexp.Regexp, filesInChan <-chan string, foundChannel chan ds.Found, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for fpath := range filesInChan {
-		Filter(query, fpath, foundChannel)
+		Filter(r, fpath, foundChannel)
 	}
 }
 
 func FilterFileIn(query string, filesInChan <-chan string, foundChannel chan ds.Found) {
 	var wg sync.WaitGroup
+	r, _ := regexp.Compile(query)
+
 	for i := 0; i <= workers; i++ {
 		wg.Add(1)
-		go readFileChannel(query, filesInChan, foundChannel, &wg)
+		go readFileChannel(r, filesInChan, foundChannel, &wg)
 	}
 	wg.Wait()
 	close(foundChannel)
