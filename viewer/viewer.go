@@ -10,14 +10,14 @@ import (
 
 const fileInfoTmpl = `
 
-
-------------------------
+[36m
+/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\
+\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
 Path: {{.FilePath}}
-Matched lines: {{len .LineNumbers}}
-------------------------
-`
+Matched lines: {{.LineNumbers}} ({{len .LineNumbers}})
+[36m`
 
-const lineTmpl = `|{{.LineNumber}}|		{{.Text}} `
+const lineTmpl = `{{if .Found}}[31m{{else}}[37m{{end}}|{{.LineNumber}}|		{{.Text}} `
 const blockTmpl = `{{ range $i, $line := .Content }}{{formatLine $ $i $line}}
 {{end}}`
 
@@ -44,10 +44,8 @@ func formatLine(b *Block, i int, line string) string {
 	if err := t.ExecuteTemplate(out, "lineTmpl", &l); err != nil {
 		panic(err)
 	}
-	if l.Found {
-		return "\033[31m" + out.String()
-	}
-	return "\033[37m" + out.String()
+
+	return out.String()
 
 }
 
