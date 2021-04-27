@@ -9,9 +9,10 @@ type Block struct {
 	FirstLine int
 	LastLine  int
 	Lines     map[int]bool
+	Content   []string
 }
 
-func getBlock(doc []string, lineNumber int) (int, int) {
+func findBlock(doc []string, lineNumber int) (int, int) {
 	ff := false
 	fl := false
 	first := lineNumber
@@ -43,16 +44,24 @@ func getBlock(doc []string, lineNumber int) (int, int) {
 	return first, last
 }
 
+func createBlock(f filter.Found, lineNumber, first, last int, blocks map[string]*Block) {
+	key := fmt.Sprintf("%d-%d", first, last)
+	_, ok := blocks[key]
+	if !ok {
+		blocks[key] = &Block{
+			FirstLine: first,
+			LastLine:  last,
+			Lines:     make(map[int]bool),
+			Content:   f.Content[first:last]}
+	}
+	blocks[key].Lines[lineNumber] = true
+}
+
 func getBlocks(f filter.Found) map[string]*Block {
 	blocks := make(map[string]*Block)
-	for _, val := range f.LineNumbers {
-		first, last := getBlock(f.Content, val)
-		key := fmt.Sprintf("%d-%d", first, last)
-		_, ok := blocks[key]
-		if !ok {
-			blocks[key] = &Block{FirstLine: first, LastLine: last, Lines: make(map[int]bool)}
-		}
-		blocks[key].Lines[val] = true
+	for _, lineNumber := range f.LineNumbers {
+		first, last := findBlock(f.Content, lineNumber)
+		createBlock(f, lineNumber, first, last, blocks)
 	}
 	return blocks
 }
