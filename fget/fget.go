@@ -25,8 +25,8 @@ func isText(path string) bool {
 	}
 	return false
 }
-func Get(rootPath string) <-chan string {
-	filesInChan := make(chan string)
+func Get(rootPath string, buffer int) <-chan string {
+	filesInChan := make(chan string, buffer)
 	go func() {
 		filepath.Walk(rootPath, func(path string, file os.FileInfo, err error) error {
 			if !file.IsDir() {

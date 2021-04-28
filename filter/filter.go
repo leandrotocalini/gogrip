@@ -3,15 +3,8 @@ package filter
 import (
 	"os"
 	"regexp"
-	"runtime"
 	"sync"
 )
-
-var workers int
-
-func init() {
-	workers = runtime.NumCPU()
-}
 
 func Filter(r *regexp.Regexp, filePath string, c chan Found) {
 	file, _ := os.Open(filePath)
@@ -30,14 +23,18 @@ func processFileInChannel(r *regexp.Regexp, filesInChan <-chan string, foundChan
 	}
 }
 
-func FileInChannel(query string, filesInChan <-chan string, foundChannel chan Found) {
-	var wg sync.WaitGroup
-	r, _ := regexp.Compile(query)
+func Process(query string, filesInChan <-chan string, buffer int) <-chan Found {
+	foundChannel := make(chan Found, buffer)
+	go func() {
+		var wg sync.WaitGroup
+		r, _ := regexp.Compile(query)
 
-	for i := 0; i <= workers; i++ {
-		wg.Add(1)
-		go processFileInChannel(r, filesInChan, foundChannel, &wg)
-	}
-	wg.Wait()
-	close(foundChannel)
+		for i := 0; i <= buffer; i++ {
+			wg.Add(1)
+			go processFileInChannel(r, filesInChan, foundChannel, &wg)
+		}
+		wg.Wait()
+		close(foundChannel)
+	}()
+	return foundChannel
 }
