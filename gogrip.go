@@ -15,8 +15,10 @@ func main() {
 	query := flag.Arg(0)
 	rootPath := flag.Arg(1)
 	buffer := runtime.NumCPU()
-
-	for block := range blocks.Process(filter.Process(query, fget.Get(rootPath, buffer * 2), buffer), buffer) {
+	fchan := fget.Get(rootPath, buffer*2)
+	filterChan := filter.Process(query, fchan, buffer)
+	blocksChan := blocks.Process(filterChan, buffer)
+	for block := range blocksChan {
 		fmt.Println(formatter.Format(block))
 	}
 }

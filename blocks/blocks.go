@@ -27,7 +27,6 @@ func findBlockOneWay(doc []string, lineNumber, order int) int {
 		}
 	}
 	return found
-
 }
 
 func findBlock(doc []string, lineNumber int) (int, int) {
