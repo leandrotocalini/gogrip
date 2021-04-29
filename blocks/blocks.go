@@ -13,36 +13,25 @@ type Block struct {
 	FilePath  string
 }
 
-func findBlock(doc []string, lineNumber int) (int, int) {
-	ff := false
-	fl := false
-	first := lineNumber
-	last := lineNumber
-	for !ff || !fl {
-		if ff == false {
-			if doc[first] == "" {
-				ff = true
+func findBlockOneWay(doc []string, lineNumber, order int) int {
+	found := lineNumber
+	for {
+		if doc[found] == "" {
+			return found
+		} else {
+			if found > 0 && found < len(doc) -1 {
+				found += order
 			} else {
-				if first > 0 {
-					first--
-				} else {
-					ff = true
-				}
-			}
-		}
-		if fl == false {
-			if doc[last] == "" {
-				fl = true
-			} else {
-				if last < len(doc)-1 {
-					last++
-				} else {
-					fl = true
-				}
+				return found
 			}
 		}
 	}
-	return first, last
+	return found
+
+}
+
+func findBlock(doc []string, lineNumber int) (int, int) {
+	return findBlockOneWay(doc, lineNumber, -1), findBlockOneWay(doc, lineNumber, 1)
 }
 
 func sendBlocks(f filter.Found, bchan chan Block) {

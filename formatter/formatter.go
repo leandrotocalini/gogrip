@@ -22,7 +22,7 @@ func formatLine(b *blocks.Block, i int, line string) string {
 		LineNumber int
 		FilePath   string
 	}
-	l := &Line{Text: line, Found: found, LineNumber: ln, FilePath: b.FilePath}
+	l := &Line{Text: line, Found: found, LineNumber: ln + 1, FilePath: b.FilePath}
 	out := &bytes.Buffer{}
 	t, err := template.New("lineTmpl").Parse(lineTmpl)
 	if err != nil {
