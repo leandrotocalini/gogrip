@@ -2,9 +2,11 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"github.com/leandrotocalini/gogrip/blocks"
 	"github.com/leandrotocalini/gogrip/fget"
 	"github.com/leandrotocalini/gogrip/filter"
-	"github.com/leandrotocalini/gogrip/viewer"
+	"github.com/leandrotocalini/gogrip/formatter"
 	"runtime"
 )
 
@@ -14,7 +16,7 @@ func main() {
 	rootPath := flag.Arg(1)
 	buffer := runtime.NumCPU()
 
-	for f := range filter.Process(query, fget.Get(rootPath, buffer), buffer) {
-		viewer.View(f)
+	for block := range blocks.Process(filter.Process(query, fget.Get(rootPath, buffer * 2), buffer), buffer) {
+		fmt.Println(formatter.Format(block))
 	}
 }

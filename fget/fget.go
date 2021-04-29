@@ -18,13 +18,13 @@ func isText(path string) bool {
 		return false
 	}
 	file.Seek(0, 0)
-
 	contentType := http.DetectContentType(buffer)
 	if contentType == "text/plain; charset=utf-8" {
 		return true
 	}
 	return false
 }
+
 func Get(rootPath string, buffer int) <-chan string {
 	filesInChan := make(chan string, buffer)
 	go func() {
