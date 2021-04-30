@@ -13,7 +13,6 @@ type Found struct {
 	Match       bool
 	FilePath    string
 	Content     []string
-	Regexp      *regexp.Regexp
 }
 
 type Line struct{
@@ -23,10 +22,10 @@ type Line struct{
 
 
 func filterScanChannel(r *regexp.Regexp, filePath string, c chan Line) Found {
-	f := Found{Match: false, FilePath: filePath, Regexp: r }
+	f := Found{Match: false, FilePath: filePath}
 	for line := range c{
 		f.Content = append(f.Content, line.Text)
-		if f.Regexp.MatchString(line.Text) {
+		if r.MatchString(line.Text) {
 			f.Match = true
 			f.LineNumbers = append(f.LineNumbers, line.Ln)
 		}
