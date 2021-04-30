@@ -1,7 +1,6 @@
 package filter
 
 import (
-	"io"
 	"regexp"
 	"testing"
 )
@@ -17,7 +16,7 @@ func Test_filterFileChannel(t *testing.T) {
 	}(c)
 	r, _ := regexp.Compile("Hello")
 	t.Run("match test", func(t *testing.T) {
-		got := filterFileChannel(r, "test.go", c)
+		got := filterScanChannel(r, "test.go", c)
 		if !got.Match {
 			t.Errorf("No Match!")
 		}
@@ -41,7 +40,7 @@ func Test_filterFileChannelMoreLines(t *testing.T) {
 	}(c)
 	r, _ := regexp.Compile("Hello")
 	t.Run("match with more line test", func(t *testing.T) {
-		got := filterFileChannel(r, "test.go", c)
+		got := filterScanChannel(r, "test.go", c)
 		if !got.Match {
 			t.Errorf("No Match!")
 		}

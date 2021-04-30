@@ -22,7 +22,7 @@ type Line struct{
 }
 
 
-func filterFileChannel(r *regexp.Regexp, filePath string, c chan Line) Found {
+func filterScanChannel(r *regexp.Regexp, filePath string, c chan Line) Found {
 	f := Found{Match: false, FilePath: filePath, Regexp: r }
 	for line := range c{
 		f.Content = append(f.Content, line.Text)
@@ -55,7 +55,7 @@ func openScanFile(filePath string, c chan Line){
 func filterPath(r *regexp.Regexp, filePath string) Found{
 	c := make(chan Line, 10)
 	go openScanFile(filePath, c)
-	return filterFileChannel(r, filePath, c)
+	return filterScanChannel(r, filePath, c)
 }
 
 func filterWorker(r *regexp.Regexp, filesInChan <-chan string, foundChan chan Found, wg *sync.WaitGroup) {
