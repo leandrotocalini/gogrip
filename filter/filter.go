@@ -51,16 +51,12 @@ func openScanFile(filePath string, c chan Line){
 }
 
 
-func filterPath(r *regexp.Regexp, filePath string) Found{
-	c := make(chan Line, 10)
-	go openScanFile(filePath, c)
-	return filterScanChannel(r, filePath, c)
-}
-
 func filterWorker(r *regexp.Regexp, filesInChan <-chan string, foundChan chan Found, wg *sync.WaitGroup) {
 	defer wg.Done()
-	for fpath := range filesInChan {
-		f := filterPath(r, fpath)
+	for filePath := range filesInChan {
+		c := make(chan Line, 10)
+		go openScanFile(filePath, c)
+		f := filterScanChannel(r, filePath, c)
 		if f.Match {
 			foundChan <- f
 		}

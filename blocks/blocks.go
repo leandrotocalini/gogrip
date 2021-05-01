@@ -33,7 +33,7 @@ func findBlock(doc []string, lineNumber int) (int, int) {
 	return findBlockOneWay(doc, lineNumber, -1), findBlockOneWay(doc, lineNumber, 1)
 }
 
-func sendBlocks(f filter.Found, bchan chan Block) {
+func foundToBlocks(f filter.Found, bchan chan Block) {
 	type Key struct {
 		FirstLine int
 		LastLine  int
@@ -70,7 +70,7 @@ func Process(foundChan <-chan filter.Found, buffer int) <-chan Block {
 			go func(foundChan <-chan filter.Found, bchan chan Block, wg *sync.WaitGroup) {
 				defer wg.Done()
 				for f := range foundChan {
-					sendBlocks(f, bchan)
+					foundToBlocks(f, bchan)
 				}
 			}(foundChan, bchan, &wg)
 		}

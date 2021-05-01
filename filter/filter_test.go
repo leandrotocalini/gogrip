@@ -3,6 +3,7 @@ package filter
 import (
 	"regexp"
 	"testing"
+	"github.com/leandrotocalini/gogrip/fget"
 )
 
 func Test_filterFileChannel(t *testing.T) {
@@ -48,5 +49,21 @@ func Test_filterFileChannelMoreLines(t *testing.T) {
 			t.Errorf("Wrong amount of lines %d %d ", len(got.LineNumbers), len(got.Content))
 
 		}
+	})
+}
+
+func Test_fullFilterWithFgetChannel(t *testing.T) {
+	c := fget.Get(".", 10)
+	found := false
+	for val := range Process("func", c, 10){
+		if val.Match{
+			found = true
+		}
+	}
+	t.Run("full text in folder", func(t *testing.T) {
+		if !found {
+			t.Errorf("Full search in folder should match func!")
+		}
+
 	})
 }
