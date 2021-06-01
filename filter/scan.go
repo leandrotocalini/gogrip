@@ -2,6 +2,18 @@ package filter
 
 import "regexp"
 
+type Found struct {
+	LineNumbers []int
+	Match       bool
+	FilePath    string
+	Content     []string
+}
+
+type FScanner interface {
+	Scan() bool
+	Text() string
+}
+
 func filterScanner(scanner FScanner, query string) ([]string, []int) {
 	r, _ := regexp.Compile(query)
 	i := 0

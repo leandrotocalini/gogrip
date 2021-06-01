@@ -15,7 +15,7 @@ func main() {
 	rootPath := flag.Arg(1)
 	buffer := runtime.NumCPU()
 
-	for block := range filter.FilterPath(rootPath, buffer, query) {
+	for block := range filter.SearchBlocks(rootPath, buffer, query) {
 		fmt.Println(formatter.Format(block))
 	}
 }

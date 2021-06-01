@@ -7,6 +7,10 @@ type Block struct {
 	Content   []string
 	FilePath  string
 }
+type Key struct {
+	FirstLine int
+	LastLine  int
+}
 
 func findBlockOneWay(doc []string, lineNumber, order int) int {
 	found := lineNumber
@@ -21,37 +25,28 @@ func findBlockOneWay(doc []string, lineNumber, order int) int {
 			}
 		}
 	}
+
 	return found
 }
 
-func findBlock(doc []string, lineNumber int) (int, int) {
-	return findBlockOneWay(doc, lineNumber, -1), findBlockOneWay(doc, lineNumber, 1)
-}
-
-func foundToBlocks(f Found, bchan chan Block) {
-	type Key struct {
-		FirstLine int
-		LastLine  int
-	}
+func makeBlocks(f Found) map[Key]*Block {
 	blocks := make(map[Key]*Block)
 	for _, lineNumber := range f.LineNumbers {
-		first, last := findBlock(f.Content, lineNumber)
 		key := Key{
-			FirstLine: first,
-			LastLine:  last,
+			FirstLine: findBlockOneWay(f.Content, lineNumber, -1),
+			LastLine:  findBlockOneWay(f.Content, lineNumber, 1),
 		}
 		_, ok := blocks[key]
 		if !ok {
 			blocks[key] = &Block{
-				FirstLine: first,
-				LastLine:  last,
+				FirstLine: key.FirstLine,
+				LastLine:  key.LastLine,
 				Lines:     make(map[int]bool),
 				FilePath:  f.FilePath,
-				Content:   f.Content[first:last]}
+				Content:   f.Content[key.FirstLine:key.LastLine]}
 		}
 		blocks[key].Lines[lineNumber] = true
 	}
-	for _, val := range blocks {
-		bchan <- *val
-	}
+
+	return blocks
 }

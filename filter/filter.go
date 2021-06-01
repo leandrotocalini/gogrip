@@ -6,43 +6,35 @@ import (
 	"sync"
 )
 
-type Found struct {
-	LineNumbers []int
-	Match       bool
-	FilePath    string
-	Content     []string
+
+
+
+func filterFile(wg *sync.WaitGroup, query, filePath string, blockChannel chan Block) {
+	wg.Add(1)
+	defer wg.Done()
+	f, err := os.Open(filePath)
+	if err == nil {
+		found := scanFile(bufio.NewScanner(f), filePath, query)
+		f.Close()
+		if found.Match {
+			for _, val := range makeBlocks(found) {
+				blockChannel <- *val
+			}
+		}
+	}
 }
 
-
-type FScanner interface {
-	Scan() bool
-	Text() string
-}
-
-
-func getFilesAndFilter(rootPath string, buffer int, query string, blockChannel chan Block) {
+func searchInFiles(rootPath string, buffer int, query string, blockChannel chan Block) {
 	defer close(blockChannel)
 	var wg sync.WaitGroup
 	for filePath := range getFiles(rootPath, buffer*2) {
-		go func() {
-			wg.Add(1)
-			defer wg.Done()
-			f, err := os.Open(filePath)
-			if err == nil {
-				found := scanFile(bufio.NewScanner(f), filePath, query)
-				f.Close()
-				if found.Match {
-					foundToBlocks(found, blockChannel)
-				}
-			}
-
-		}()
+		go filterFile(&wg, query, filePath, blockChannel)
 	}
 	wg.Wait()
 }
 
-func FilterPath(rootPath string, buffer int, query string) <-chan Block {
+func SearchBlocks(rootPath string, buffer int, query string) <-chan Block {
 	blockChannel := make(chan Block, buffer)
-	go getFilesAndFilter(rootPath, buffer, query, blockChannel)
+	go searchInFiles(rootPath, buffer, query, blockChannel)
 	return blockChannel
 }
