@@ -12,8 +12,8 @@ func TestGet(t *testing.T) {
 		for range c {
 			cn++
 		}
-		if cn != 5  {
-			t.Errorf("Get() = %v, want %v", cn, 0)
+		if cn != 6  {
+			t.Errorf("Get() = %v, want %v", cn, 6)
 		}
 	})
 	
