@@ -1,4 +1,4 @@
-package fget
+package filter
 
 import (
 	"net/http"
@@ -25,18 +25,20 @@ func isText(path string) bool {
 	return false
 }
 
-func Get(rootPath string, buffer int) <-chan string {
-	filesInChan := make(chan string, buffer)
-	go func() {
-		filepath.Walk(rootPath, func(path string, file os.FileInfo, err error) error {
-			if !file.IsDir() {
-				if isText(path) {
-					filesInChan <- path
-				}
+func _getFiles(rootPath string, filesInChan chan string) {
+	filepath.Walk(rootPath, func(path string, file os.FileInfo, err error) error {
+		if !file.IsDir() {
+			if isText(path) {
+				filesInChan <- path
 			}
-			return nil
-		})
-		close(filesInChan)
-	}()
+		}
+		return nil
+	})
+	close(filesInChan)
+}
+
+func getFiles(rootPath string, buffer int) <-chan string {
+	filesInChan := make(chan string, buffer)
+	go _getFiles(rootPath, filesInChan)
 	return filesInChan
 }

@@ -1,9 +1,4 @@
-package blocks
-
-import (
-	"github.com/leandrotocalini/gogrip/filter"
-	"sync"
-)
+package filter
 
 type Block struct {
 	FirstLine int
@@ -19,7 +14,7 @@ func findBlockOneWay(doc []string, lineNumber, order int) int {
 		if doc[found] == "" {
 			return found
 		} else {
-			if found > 0 && found < len(doc) -1 {
+			if found > 0 && found < len(doc)-1 {
 				found += order
 			} else {
 				return found
@@ -33,7 +28,7 @@ func findBlock(doc []string, lineNumber int) (int, int) {
 	return findBlockOneWay(doc, lineNumber, -1), findBlockOneWay(doc, lineNumber, 1)
 }
 
-func foundToBlocks(f filter.Found, bchan chan Block) {
+func foundToBlocks(f Found, bchan chan Block) {
 	type Key struct {
 		FirstLine int
 		LastLine  int
@@ -59,23 +54,4 @@ func foundToBlocks(f filter.Found, bchan chan Block) {
 	for _, val := range blocks {
 		bchan <- *val
 	}
-}
-
-func Process(foundChan <-chan filter.Found, buffer int) <-chan Block {
-	bchan := make(chan Block, buffer)
-	go func() {
-		var wg sync.WaitGroup
-		for i := 0; i <= buffer; i++ {
-			wg.Add(1)
-			go func(foundChan <-chan filter.Found, bchan chan Block, wg *sync.WaitGroup) {
-				defer wg.Done()
-				for f := range foundChan {
-					foundToBlocks(f, bchan)
-				}
-			}(foundChan, bchan, &wg)
-		}
-		wg.Wait()
-		close(bchan)
-	}()
-	return bchan
 }

@@ -3,7 +3,6 @@ package filter
 import (
 	"bufio"
 	"os"
-	"io"
 	"regexp"
 	"sync"
 )
@@ -15,67 +14,63 @@ type Found struct {
 	Content     []string
 }
 
-type Line struct{
-	Text	string
-	Ln		int
+
+type FScanner interface {
+	Scan() bool
+	Text() string
 }
 
-
-func filterScanChannel(r *regexp.Regexp, filePath string, c chan Line) Found {
-	f := Found{Match: false, FilePath: filePath}
-	for line := range c{
-		f.Content = append(f.Content, line.Text)
-		if r.MatchString(line.Text) {
-			f.Match = true
-			f.LineNumbers = append(f.LineNumbers, line.Ln)
+func filterScanner(scanner FScanner, r *regexp.Regexp) ([]string, []int) {
+	i := 0
+	content := make([]string, 0)
+	lineNumbers := make([]int, 0)
+	for scanner.Scan() {
+		text := scanner.Text()
+		content = append(content, text)
+		if r.MatchString(text) {
+			lineNumbers = append(lineNumbers, i)
 		}
+		i++
+	}
+
+	return content, lineNumbers
+}
+
+func scanFile(scanner FScanner, filePath string, r *regexp.Regexp) Found {
+	f := Found{Match: false, FilePath: filePath}
+	content, lineNumbers := filterScanner(scanner, r)
+	if len(lineNumbers) > 0 {
+		f.Content = content
+		f.LineNumbers = lineNumbers
+		f.Match = true
 	}
 	return f
 }
 
-func scanFile(handle io.Reader, c chan Line) {
-	scanner := bufio.NewScanner(handle)
-	i := 0
-	for scanner.Scan() {
-		text := string(scanner.Text())
-		c <- Line{Text: text, Ln: i}
-		i++	
-	}
-}
-
-func openScanFile(filePath string, c chan Line){
-	f, _ := os.Open(filePath)
-	defer f.Close()
-	defer close(c)
-	scanFile(f, c)
-}
-
-
-func filterWorker(r *regexp.Regexp, filesInChan <-chan string, foundChan chan Found, wg *sync.WaitGroup) {
-	defer wg.Done()
-	for filePath := range filesInChan {
-		c := make(chan Line, 10)
-		go openScanFile(filePath, c)
-		f := filterScanChannel(r, filePath, c)
-		if f.Match {
-			foundChan <- f
-		}
-	}
-}
-
-func filterPool(filesInChan <-chan string, foundChan chan Found, query string, buffer int){
-	defer close(foundChan)
-	var wg sync.WaitGroup
+func getFilesAndFilter(rootPath string, buffer int, query string, blockChannel chan Block) {
 	r, _ := regexp.Compile(query)
-	for i := 0; i <= buffer; i++ {
-		wg.Add(1)
-		go filterWorker(r, filesInChan, foundChan, &wg)
+	defer close(blockChannel)
+	var wg sync.WaitGroup
+	for filePath := range getFiles(rootPath, buffer*2) {
+		go func() {
+			wg.Add(1)
+			defer wg.Done()
+			f, err := os.Open(filePath)
+			if err == nil {
+				found := scanFile(bufio.NewScanner(f), filePath, r)
+				f.Close()
+				if found.Match {
+					foundToBlocks(found, blockChannel)
+				}
+			}
+
+		}()
 	}
 	wg.Wait()
 }
 
-func Process(query string, filesInChan <-chan string, buffer int) <-chan Found {
-	foundChan := make(chan Found, buffer)
-	go filterPool(filesInChan, foundChan, query, buffer)
-	return foundChan
+func FilterPath(rootPath string, buffer int, query string) <-chan Block {
+	blockChannel := make(chan Block, buffer)
+	go getFilesAndFilter(rootPath, buffer, query, blockChannel)
+	return blockChannel
 }

@@ -2,7 +2,7 @@ package formatter
 
 import (
 	"bytes"
-	"github.com/leandrotocalini/gogrip/blocks"
+	"github.com/leandrotocalini/gogrip/filter"
 	"text/template"
 )
 
@@ -10,7 +10,7 @@ const lineTmpl = `{{if .Found}}[31m{{else}}[37m{{end}}{{.FilePath}}	{{.LineNum
 const blockTmpl = `{{ range $i, $line := .Content }}{{formatLine $ $i $line}}
 {{end}}`
 
-func formatLine(b *blocks.Block, i int, line string) string {
+func formatLine(b *filter.Block, i int, line string) string {
 	ln := i + b.FirstLine
 	found, ok := b.Lines[ln]
 	if !ok {
@@ -35,7 +35,7 @@ func formatLine(b *blocks.Block, i int, line string) string {
 
 }
 
-func Format(block blocks.Block) string{
+func Format(block filter.Block) string{
 	out := &bytes.Buffer{}
 	funcMap := template.FuncMap{
 		"formatLine": formatLine,
