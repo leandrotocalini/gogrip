@@ -4,8 +4,12 @@ import (
 	"log"
 	"time"
 
+	"runtime"
+
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
+	"github.com/leandrotocalini/gogrip/filter"
+	"github.com/leandrotocalini/gogrip/formatter"
 )
 
 func main() {
@@ -42,6 +46,8 @@ func main() {
 	ticker := time.NewTicker(time.Second).C
 	tickerCount := 0
 	uiEvents := ui.PollEvents()
+	blocks := []filter.Block{}
+	blockPos := 0
 	for {
 		select {
 		case e := <-uiEvents:
@@ -51,7 +57,18 @@ func main() {
 			case "<C-f>":
 				searchText := getSearchString(grid, searchBox, uiEvents)
 				fileList.Title = searchText
-				search(searchText)
+				blocks = search(searchText, grid, fileList)
+			case "<Up>":
+				if blockPos > 1 {
+					blockPos -= 1
+					renderBlock(grid, content, blockPos, blocks)
+				}
+			case "<Down>":
+				if blockPos < len(blocks) {
+					blockPos += 1
+					renderBlock(grid, content, blockPos, blocks)
+
+				}
 			}
 		case <-ticker:
 			tickerCount++
@@ -60,8 +77,20 @@ func main() {
 	}
 }
 
-func search(searchText string) {
-	//
+func search(searchText string, grid *ui.Grid, fileList *widgets.List) []filter.Block {
+	buffer := runtime.NumCPU()
+	fileList.Rows = []string{}
+	blocks := []filter.Block{}
+	for block := range filter.SearchBlocks(".", buffer, searchText) {
+		fileList.Rows = append(fileList.Rows, block.FilePath)
+		blocks = append(blocks, block)
+		ui.Render(grid)
+	}
+	return blocks
+}
+
+func renderBlock(grid *ui.Grid, p *widgets.Paragraph, blockPos int, blocks []filter.Block) {
+	p.Text = formatter.Format(blocks[blockPos])
 }
 
 func getSearchString(grid *ui.Grid, p *widgets.Paragraph, uiEvents <-chan ui.Event) string {
