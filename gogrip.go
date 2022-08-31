@@ -12,12 +12,17 @@ import (
 	"github.com/leandrotocalini/gogrip/formatter"
 )
 
-func main() {
-	if err := ui.Init(); err != nil {
-		log.Fatalf("failed to initialize termui: %v", err)
-	}
-	defer ui.Close()
+type UserInterface struct {
+	fileList  *widgets.List
+	searchBox *widgets.Paragraph
+	content   *widgets.Paragraph
+	grid      *ui.Grid
+	blocks    []filter.Block
+	position  int
+	events    <-chan ui.Event
+}
 
+func createInterface() *UserInterface {
 	fileList := widgets.NewList()
 	fileList.Rows = []string{}
 	fileList.Title = "Files"
@@ -41,67 +46,82 @@ func main() {
 			ui.NewCol((1.0/4)*3, content),
 		),
 	)
+	return &UserInterface{
+		fileList:  fileList,
+		searchBox: searchBox,
+		content:   content,
+		grid:      grid,
+		position:  0,
+		blocks:    []filter.Block{},
+		events:    ui.PollEvents(),
+	}
+}
 
-	ui.Render(grid)
+func main() {
+	if err := ui.Init(); err != nil {
+		log.Fatalf("failed to initialize termui: %v", err)
+	}
+	defer ui.Close()
+
+	userInterface := createInterface()
+
+	ui.Render(userInterface.grid)
 	ticker := time.NewTicker(time.Second).C
 	tickerCount := 0
-	uiEvents := ui.PollEvents()
-	blocks := []filter.Block{}
-	blockPos := 0
 	for {
 		select {
-		case e := <-uiEvents:
+		case e := <-userInterface.events:
 			switch e.ID {
 			case "<C-c>":
 				return
 			case "<C-f>":
-				searchText := getSearchString(grid, searchBox, uiEvents)
-				fileList.Title = searchText
-				blocks = search(searchText, grid, fileList)
+				searchText := userInterface.getSearchString()
+				userInterface.search(searchText)
+				userInterface.renderBlock(0)
 			case "<Up>":
-				if blockPos > 1 {
-					blockPos -= 1
-					renderBlock(grid, content, blockPos, blocks)
+				if userInterface.position > 0 {
+					userInterface.renderBlock(userInterface.position - 1)
 				}
 			case "<Down>":
-				if blockPos < len(blocks) {
-					blockPos += 1
-					renderBlock(grid, content, blockPos, blocks)
-
+				if userInterface.position < len(userInterface.blocks)-1 {
+					userInterface.renderBlock(userInterface.position + 1)
 				}
 			}
 		case <-ticker:
 			tickerCount++
-			ui.Render(grid)
+			ui.Render(userInterface.grid)
 		}
 	}
 }
 
-func search(searchText string, grid *ui.Grid, fileList *widgets.List) []filter.Block {
+func (u *UserInterface) search(searchText string) {
 	buffer := runtime.NumCPU()
-	fileList.Rows = []string{}
-	blocks := []filter.Block{}
+	u.fileList.Rows = []string{}
+	u.blocks = []filter.Block{}
+	u.position = 0
 	for block := range filter.SearchBlocks(".", buffer, searchText) {
-		fileList.Rows = append(fileList.Rows, block.FilePath)
-		blocks = append(blocks, block)
-		ui.Render(grid)
+		u.fileList.Rows = append(u.fileList.Rows, block.FilePath)
+		u.blocks = append(u.blocks, block)
 	}
-	return blocks
 }
 
-func renderBlock(grid *ui.Grid, p *widgets.Paragraph, blockPos int, blocks []filter.Block) {
-	p.Text = formatter.Format(blocks[blockPos])
+func (u *UserInterface) renderBlock(position int) {
+	u.position = position
+	u.content.Text = formatter.Format(u.blocks[position])
+	u.content.Title = u.blocks[position].FilePath
+	ui.Render(u.grid)
 }
 
-func getSearchString(grid *ui.Grid, p *widgets.Paragraph, uiEvents <-chan ui.Event) string {
+func (u *UserInterface) getSearchString() string {
 	text := ""
-	for i := range uiEvents {
+	for i := range u.events {
 		if i.ID == "<Enter>" {
+			u.fileList.Title = text
 			return text
 		}
 		text = text + i.ID
-		p.Text = text
-		ui.Render(grid)
+		u.searchBox.Text = text
+		ui.Render(u.grid)
 	}
 	return ""
 }
