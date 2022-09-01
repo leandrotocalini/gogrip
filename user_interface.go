@@ -42,6 +42,24 @@ func (u *UserInterface) renderBlock(position int) {
 }
 
 func (u *UserInterface) searchEventHandler(event ui.Event) {
+	if event.ID == "<Backspace>" && len(u.searchText) > 0 {
+		u.searchText = u.searchText[:len(u.searchText)-1]
+		u.searchBox.Text = u.searchText
+		ui.Render(u.grid)
+	} else if event.ID == "<Space>" {
+		u.searchText = u.searchText + " "
+		u.searchBox.Text = u.searchText
+		ui.Render(u.grid)
+	} else if len(event.ID) == 1 {
+		u.searchText = u.searchText + event.ID
+		u.searchBox.Text = u.searchText
+		ui.Render(u.grid)
+		u.search(u.searchText)
+		//u.renderBlock(0)
+	}
+}
+
+func (u *UserInterface) searchEventHandlerWithEnter(event ui.Event) {
 	if event.ID == "<Enter>" {
 		u.fileList.Title = u.searchText
 		u.content.Text = ""
