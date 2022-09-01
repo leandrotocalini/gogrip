@@ -10,79 +10,77 @@ import (
 	"github.com/leandrotocalini/gogrip/formatter"
 )
 
-type UserInterface struct {
-	fileList   *widgets.List
-	searchText string
-	searchBox  *widgets.Paragraph
-	content    *widgets.Paragraph
-	grid       *ui.Grid
-	blocks     []filter.Block
-	position   int
-	events     <-chan ui.Event
+type Screen struct {
+	sideBar     *widgets.List
+	searchText  string
+	searchBox   *widgets.Paragraph
+	content     *widgets.Paragraph
+	grid        *ui.Grid
+	blocks      []filter.Block
+	position    int
+	events      <-chan ui.Event
+	contentChan chan int
+	sideBarChan chan int
 }
 
-func (u *UserInterface) search(searchText string) {
+func (u *Screen) search(searchText string) {
 	buffer := runtime.NumCPU()
-	u.fileList.Rows = []string{}
+	u.sideBar.Rows = []string{}
 	u.blocks = []filter.Block{}
 	u.position = 0
 	for block := range filter.SearchBlocks(".", buffer, searchText) {
-		u.fileList.Rows = append(u.fileList.Rows, block.FilePath)
+		u.sideBar.Rows = append(u.sideBar.Rows, block.FilePath)
 		u.blocks = append(u.blocks, block)
+	}
+	u.changeBlock(0)
+}
+
+func (u *Screen) searchEventHandler(event ui.Event) {
+	if event.ID == "<Backspace>" && len(u.searchText) > 0 {
+		u.searchText = u.searchText[:len(u.searchText)-1]
+		u.searchBox.Text = u.searchText
+		u.search(u.searchText)
+		ui.Render(u.grid)
+	} else if event.ID == "<Space>" {
+		u.searchText = u.searchText + " "
+		u.searchBox.Text = u.searchText
+		ui.Render(u.grid)
+	} else if len(event.ID) == 1 {
+		u.searchText = u.searchText + event.ID
+		u.searchBox.Text = u.searchText
+		u.search(u.searchText)
+		ui.Render(u.grid)
+		//u.renderBlock(0)
 	}
 }
 
-func (u *UserInterface) renderBlock(position int) {
-	u.position = position
-	if len(u.blocks) > position && position >= 0 {
+func (u *Screen) listenContentChan() {
+	for position := range u.contentChan {
 		u.content.Text = formatter.Format(u.blocks[position])
 		u.content.Title = u.blocks[position].FilePath
 		ui.Render(u.grid)
 	}
 }
 
-func (u *UserInterface) searchEventHandler(event ui.Event) {
-	if event.ID == "<Backspace>" && len(u.searchText) > 0 {
-		u.searchText = u.searchText[:len(u.searchText)-1]
-		u.searchBox.Text = u.searchText
-		ui.Render(u.grid)
-	} else if event.ID == "<Space>" {
-		u.searchText = u.searchText + " "
-		u.searchBox.Text = u.searchText
-		ui.Render(u.grid)
-	} else if len(event.ID) == 1 {
-		u.searchText = u.searchText + event.ID
-		u.searchBox.Text = u.searchText
-		ui.Render(u.grid)
-		u.search(u.searchText)
-		//u.renderBlock(0)
-	}
-}
-
-func (u *UserInterface) searchEventHandlerWithEnter(event ui.Event) {
-	if event.ID == "<Enter>" {
-		u.fileList.Title = u.searchText
-		u.content.Text = ""
-		u.search(u.searchText)
-		u.renderBlock(0)
-		return
-	} else if event.ID == "<Backspace>" && len(u.searchText) > 0 {
-		u.searchText = u.searchText[:len(u.searchText)-1]
-		u.searchBox.Text = u.searchText
-		ui.Render(u.grid)
-	} else if event.ID == "<Space>" {
-		u.searchText = u.searchText + " "
-		u.searchBox.Text = u.searchText
-		ui.Render(u.grid)
-	} else if len(event.ID) == 1 {
-		u.searchText = u.searchText + event.ID
-		u.searchBox.Text = u.searchText
+func (u *Screen) listenSideBarChan() {
+	for position := range u.sideBarChan {
+		u.sideBar.Title = u.blocks[position].FilePath
 		ui.Render(u.grid)
 	}
 }
 
-func (u *UserInterface) run() {
+func (u *Screen) changeBlock(position int) {
+	if position >= 0 && position < len(u.blocks) {
+		u.position = position
+		u.sideBarChan <- u.position
+		u.contentChan <- u.position
+	}
+}
+
+func (u *Screen) run() {
 	ui.Render(u.grid)
+	go u.listenContentChan()
+	go u.listenSideBarChan()
 	ticker := time.NewTicker(time.Second).C
 	tickerCount := 0
 	for {
@@ -92,16 +90,11 @@ func (u *UserInterface) run() {
 			case "<C-c>":
 				return
 			case "<Up>":
-				if u.position > 0 {
-					u.renderBlock(u.position - 1)
-				}
+				u.changeBlock(u.position - 1)
 			case "<Down>":
-				if u.position < len(u.blocks)-1 {
-					u.renderBlock(u.position + 1)
-				}
+				u.changeBlock(u.position + 1)
 			default:
 				u.searchEventHandler(e)
-
 			}
 		case <-ticker:
 			tickerCount++
@@ -109,7 +102,7 @@ func (u *UserInterface) run() {
 		}
 	}
 }
-func CreateInterface() *UserInterface {
+func CreateInterface() *Screen {
 	fileList := widgets.NewList()
 	fileList.Rows = []string{}
 	fileList.Title = "Files"
@@ -133,14 +126,16 @@ func CreateInterface() *UserInterface {
 			ui.NewCol((1.0/4)*3, content),
 		),
 	)
-	return &UserInterface{
-		fileList:   fileList,
-		searchText: "",
-		searchBox:  searchBox,
-		content:    content,
-		grid:       grid,
-		position:   0,
-		blocks:     []filter.Block{},
-		events:     ui.PollEvents(),
+	return &Screen{
+		sideBar:     fileList,
+		searchText:  "",
+		searchBox:   searchBox,
+		content:     content,
+		grid:        grid,
+		position:    0,
+		blocks:      []filter.Block{},
+		events:      ui.PollEvents(),
+		sideBarChan: make(chan int),
+		contentChan: make(chan int),
 	}
 }
