@@ -9,7 +9,13 @@ gogrip "func"  gogrip.go
 
 ## Installation
 
+first you need in your .bashrc GOPATH as part of your PATH
 ```bash
-go build
-cp gogrip /usr/bin # Or some other directory in $PATH
+export GOPATH=$HOME/go
+export PATH=$PATH:$GOPATH/bin
+```
+
+Then you can install it with:
+```bash
+go install .
 ```
