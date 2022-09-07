@@ -1,21 +1,17 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"github.com/leandrotocalini/gogrip/filter"
-	"github.com/leandrotocalini/gogrip/formatter"
+	"log"
 
-	"runtime"
+	ui "github.com/gizak/termui/v3"
 )
 
 func main() {
-	flag.Parse()
-	query := flag.Arg(0)
-	rootPath := flag.Arg(1)
-	buffer := runtime.NumCPU()
-
-	for block := range filter.SearchBlocks(rootPath, buffer, query) {
-		fmt.Println(formatter.Format(block))
+	if err := ui.Init(); err != nil {
+		log.Fatalf("failed to initialize termui: %v", err)
 	}
+	defer ui.Close()
+
+	userInterface := CreateInterface()
+	userInterface.run()
 }

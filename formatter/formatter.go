@@ -6,8 +6,8 @@ import (
 	"text/template"
 )
 
-const lineTmpl = `{{if .Found}}[31m{{else}}[37m{{end}}{{.LineNumber}}|		{{.Text}} `
-const blockTmpl = `{{.FilePath}}{{ range $i, $line := .Content }}{{formatLine $ $i $line}}
+const lineTmpl = `{{.Text}} `
+const blockTmpl = `{{ range $i, $line := .Content }}{{formatLine $ $i $line}}
 {{end}}`
 
 func formatLine(b *filter.Block, i int, line string) string {
