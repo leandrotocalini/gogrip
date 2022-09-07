@@ -1,91 +1,55 @@
 package main
 
 import (
-	"fmt"
-	"runtime"
 	"time"
 
 	ui "github.com/gizak/termui/v3"
-	"github.com/gizak/termui/v3/widgets"
 	"github.com/leandrotocalini/gogrip/filter"
-	"github.com/leandrotocalini/gogrip/formatter"
 )
 
 type Screen struct {
-	sideBar     *widgets.Gauge
-	searchText  string
-	searchBox   *widgets.Paragraph
-	content     *widgets.Paragraph
+	sideBarBox  *SidebarBox
+	searchBox   *SearchBox
+	contentBox  *ContentBox
 	grid        *ui.Grid
 	blocks      []filter.Block
 	position    int
+	total       int
 	events      <-chan ui.Event
-	contentChan chan int
 	sideBarChan chan int
 }
 
-func (u *Screen) search(searchText string) {
-	buffer := runtime.NumCPU()
+func (u *Screen) search() {
+	searchText := u.searchBox.getText()
+	buffer := 2
 	u.blocks = []filter.Block{}
 	u.position = 0
 	for block := range filter.SearchBlocks(".", buffer, searchText) {
-
 		u.blocks = append(u.blocks, block)
+		if len(u.blocks) == 1 {
+			u.changeBlockFocus(0)
+		}
 	}
-	u.sideBar.Percent = 0
+	u.sideBarBox.widget.Percent = 0
+	u.total = len(u.blocks)
+	u.position = 0
 	u.changeBlockFocus(0)
 }
 
-func (u *Screen) changeSearch(event ui.Event) {
-	if event.ID == "<Backspace>" && len(u.searchText) > 0 {
-		u.searchText = u.searchText[:len(u.searchText)-1]
-		u.searchBox.Text = u.searchText
-	} else if event.ID == "<Space>" {
-		u.searchText = u.searchText + " "
-		u.searchBox.Text = u.searchText
-	} else if len(event.ID) == 1 {
-		u.searchText = u.searchText + event.ID
-		u.searchBox.Text = u.searchText
-	}
-	u.search(u.searchText)
-	ui.Render(u.grid)
-}
-
-func (u *Screen) contentListener() {
-	for position := range u.contentChan {
-		u.content.Text = formatter.Format(u.blocks[position])
-		u.content.Title = u.blocks[position].FilePath
-		ui.Render(u.grid)
-	}
-}
-
-func (u *Screen) sideBarListener() {
-	for position := range u.sideBarChan {
-		u.sideBar.Title = fmt.Sprintf("founds (%d/%d)", position+1, len(u.blocks))
-		u.sideBar.Percent = (position + 1) * 100 / len(u.blocks)
-		if u.sideBar.Percent > 80 {
-			u.sideBar.BarColor = ui.ColorGreen
-		} else if u.sideBar.Percent > 40 {
-			u.sideBar.BarColor = ui.ColorYellow
-		} else {
-			u.sideBar.BarColor = ui.ColorRed
-		}
-		ui.Render(u.grid)
-	}
-}
-
 func (u *Screen) changeBlockFocus(position int) {
-	if position >= 0 && position < len(u.blocks) {
+	if position >= 0 && position < u.total {
 		u.position = position
-		u.sideBarChan <- u.position
-		u.contentChan <- u.position
+		u.sideBarBox.c <- []int{u.position, u.total}
+		u.contentBox.contentChan <- u.blocks[u.position]
+		ui.Render(u.grid)
 	}
 }
 
 func (u *Screen) run() {
 	ui.Render(u.grid)
-	go u.contentListener()
-	go u.sideBarListener()
+	go u.contentBox.listen()
+	go u.searchBox.listen()
+	go u.sideBarBox.listen()
 	ticker := time.NewTicker(time.Second).C
 	for {
 		select {
@@ -98,7 +62,9 @@ func (u *Screen) run() {
 			case "<Down>":
 				u.changeBlockFocus(u.position + 1)
 			default:
-				u.changeSearch(e)
+				u.searchBox.c <- e.ID
+				u.search()
+				ui.Render(u.grid)
 			}
 		case <-ticker:
 			ui.Render(u.grid)
@@ -107,16 +73,9 @@ func (u *Screen) run() {
 }
 
 func CreateInterface() *Screen {
-	sideBar := widgets.NewGauge()
-	sideBar.Title = "Files"
-	sideBar.Percent = 10
-	searchBox := widgets.NewParagraph()
-	searchBox.Text = ""
-	searchBox.Title = "Search"
-	content := widgets.NewParagraph()
-	content.Text = ""
-	content.Title = "Content"
-
+	sideBarBox := createSidebarBox()
+	searchBox := createSearchBox()
+	contentBox := createContentBox("FILENAME", "")
 	grid := ui.NewGrid()
 	termWidth, termHeight := ui.TerminalDimensions()
 	grid.SetRect(0, 0, termWidth, termHeight)
@@ -124,22 +83,21 @@ func CreateInterface() *Screen {
 	grid.Set(
 		ui.NewRow(1,
 			ui.NewCol(1.0/4,
-				ui.NewRow(1.0/15, searchBox),
-				ui.NewRow(1.0/15, sideBar),
+				ui.NewRow(1.0/15, searchBox.widget),
+				ui.NewRow(1.0/15, sideBarBox.widget),
 			),
-			ui.NewCol((1.0/4)*3, content),
+			ui.NewCol((1.0/4)*3, contentBox.widget),
 		),
 	)
 	return &Screen{
-		sideBar:     sideBar,
-		searchText:  "",
+		sideBarBox:  sideBarBox,
 		searchBox:   searchBox,
-		content:     content,
+		contentBox:  contentBox,
 		grid:        grid,
 		position:    0,
+		total:       0,
 		blocks:      []filter.Block{},
 		events:      ui.PollEvents(),
 		sideBarChan: make(chan int),
-		contentChan: make(chan int),
 	}
 }
