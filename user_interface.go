@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"runtime"
 	"time"
 
@@ -11,7 +12,7 @@ import (
 )
 
 type Screen struct {
-	sideBar     *widgets.List
+	sideBar     *widgets.Gauge
 	searchText  string
 	searchBox   *widgets.Paragraph
 	content     *widgets.Paragraph
@@ -25,36 +26,32 @@ type Screen struct {
 
 func (u *Screen) search(searchText string) {
 	buffer := runtime.NumCPU()
-	u.sideBar.Rows = []string{}
 	u.blocks = []filter.Block{}
 	u.position = 0
 	for block := range filter.SearchBlocks(".", buffer, searchText) {
-		u.sideBar.Rows = append(u.sideBar.Rows, block.FilePath)
+
 		u.blocks = append(u.blocks, block)
 	}
-	u.changeBlock(0)
+	u.sideBar.Percent = 0
+	u.changeBlockFocus(0)
 }
 
-func (u *Screen) searchEventHandler(event ui.Event) {
+func (u *Screen) changeSearch(event ui.Event) {
 	if event.ID == "<Backspace>" && len(u.searchText) > 0 {
 		u.searchText = u.searchText[:len(u.searchText)-1]
 		u.searchBox.Text = u.searchText
-		u.search(u.searchText)
-		ui.Render(u.grid)
 	} else if event.ID == "<Space>" {
 		u.searchText = u.searchText + " "
 		u.searchBox.Text = u.searchText
-		ui.Render(u.grid)
 	} else if len(event.ID) == 1 {
 		u.searchText = u.searchText + event.ID
 		u.searchBox.Text = u.searchText
-		u.search(u.searchText)
-		ui.Render(u.grid)
-		//u.renderBlock(0)
 	}
+	u.search(u.searchText)
+	ui.Render(u.grid)
 }
 
-func (u *Screen) listenContentChan() {
+func (u *Screen) contentListener() {
 	for position := range u.contentChan {
 		u.content.Text = formatter.Format(u.blocks[position])
 		u.content.Title = u.blocks[position].FilePath
@@ -62,14 +59,22 @@ func (u *Screen) listenContentChan() {
 	}
 }
 
-func (u *Screen) listenSideBarChan() {
+func (u *Screen) sideBarListener() {
 	for position := range u.sideBarChan {
-		u.sideBar.Title = u.blocks[position].FilePath
+		u.sideBar.Title = fmt.Sprintf("founds (%d/%d)", position+1, len(u.blocks))
+		u.sideBar.Percent = (position + 1) * 100 / len(u.blocks)
+		if u.sideBar.Percent > 80 {
+			u.sideBar.BarColor = ui.ColorGreen
+		} else if u.sideBar.Percent > 40 {
+			u.sideBar.BarColor = ui.ColorYellow
+		} else {
+			u.sideBar.BarColor = ui.ColorRed
+		}
 		ui.Render(u.grid)
 	}
 }
 
-func (u *Screen) changeBlock(position int) {
+func (u *Screen) changeBlockFocus(position int) {
 	if position >= 0 && position < len(u.blocks) {
 		u.position = position
 		u.sideBarChan <- u.position
@@ -79,10 +84,9 @@ func (u *Screen) changeBlock(position int) {
 
 func (u *Screen) run() {
 	ui.Render(u.grid)
-	go u.listenContentChan()
-	go u.listenSideBarChan()
+	go u.contentListener()
+	go u.sideBarListener()
 	ticker := time.NewTicker(time.Second).C
-	tickerCount := 0
 	for {
 		select {
 		case e := <-u.events:
@@ -90,22 +94,22 @@ func (u *Screen) run() {
 			case "<C-c>":
 				return
 			case "<Up>":
-				u.changeBlock(u.position - 1)
+				u.changeBlockFocus(u.position - 1)
 			case "<Down>":
-				u.changeBlock(u.position + 1)
+				u.changeBlockFocus(u.position + 1)
 			default:
-				u.searchEventHandler(e)
+				u.changeSearch(e)
 			}
 		case <-ticker:
-			tickerCount++
 			ui.Render(u.grid)
 		}
 	}
 }
+
 func CreateInterface() *Screen {
-	fileList := widgets.NewList()
-	fileList.Rows = []string{}
-	fileList.Title = "Files"
+	sideBar := widgets.NewGauge()
+	sideBar.Title = "Files"
+	sideBar.Percent = 10
 	searchBox := widgets.NewParagraph()
 	searchBox.Text = ""
 	searchBox.Title = "Search"
@@ -121,13 +125,13 @@ func CreateInterface() *Screen {
 		ui.NewRow(1,
 			ui.NewCol(1.0/4,
 				ui.NewRow(1.0/15, searchBox),
-				ui.NewRow((1.0/15)*14, fileList),
+				ui.NewRow(1.0/15, sideBar),
 			),
 			ui.NewCol((1.0/4)*3, content),
 		),
 	)
 	return &Screen{
-		sideBar:     fileList,
+		sideBar:     sideBar,
 		searchText:  "",
 		searchBox:   searchBox,
 		content:     content,
