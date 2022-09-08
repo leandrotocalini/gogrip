@@ -28,8 +28,9 @@ func (s *SearchBox) getText() string {
 }
 
 func createSearchBox() *SearchBox {
-	content := widgets.NewParagraph()
-	content.Text = ""
-	content.Title = "Search"
-	return &SearchBox{widget: content, searchText: "", c: make(chan string, 10)}
+	search := widgets.NewParagraph()
+	search.Text = ""
+	search.Title = "Search: "
+	search.Border = false
+	return &SearchBox{widget: search, searchText: "", c: make(chan string, 10)}
 }

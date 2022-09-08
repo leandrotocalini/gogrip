@@ -23,5 +23,6 @@ func createContentBox(title, text string) *ContentBox {
 	content := widgets.NewParagraph()
 	content.Text = text
 	content.Title = title
+	//content.BorderStyle.Fg = ui.ColorRed
 	return &ContentBox{widget: content, contentChan: make(chan filter.Block)}
 }
