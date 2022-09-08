@@ -4,9 +4,13 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
-func isText(path string) bool {
+func shouldSearch(path string) bool {
+	if strings.Contains(path, ".git") {
+		return false
+	}
 	file, err := os.Open(path)
 	if err != nil {
 		return false
@@ -19,18 +23,13 @@ func isText(path string) bool {
 	}
 	file.Seek(0, 0)
 	contentType := http.DetectContentType(buffer)
-	if contentType == "text/plain; charset=utf-8" {
-		return true
-	}
-	return false
+	return contentType == "text/plain; charset=utf-8"
 }
 
 func _getFiles(rootPath string, filesInChan chan string) {
 	filepath.Walk(rootPath, func(path string, file os.FileInfo, err error) error {
-		if !file.IsDir() {
-			if isText(path) {
-				filesInChan <- path
-			}
+		if !file.IsDir() && shouldSearch(path) {
+			filesInChan <- path
 		}
 		return nil
 	})

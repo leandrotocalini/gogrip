@@ -37,6 +37,5 @@ func createSidebarBox() *SidebarBox {
 	sideBar.Title = "Matches"
 	sideBar.Percent = 0
 	sideBar.Label = " "
-
 	return &SidebarBox{widget: sideBar, c: make(chan []int)}
 }
