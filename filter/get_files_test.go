@@ -7,7 +7,7 @@ import (
 func TestGet(t *testing.T) {
 
 	t.Run("Test get files", func(t *testing.T) {
-		c := getFiles(".", 10)
+		c := getFilesEnabledInPath(".", 10)
 		cn := 0
 		want := 7
 		for range c {

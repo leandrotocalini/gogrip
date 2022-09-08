@@ -23,7 +23,7 @@ func (u *Screen) search() {
 	buffer := 2
 	u.blocks = []filter.Block{}
 	u.position = 0
-	for block := range filter.SearchBlocks(".", buffer, searchText) {
+	for block := range filter.Search(".", buffer, searchText) {
 		u.blocks = append(u.blocks, block)
 		if len(u.blocks) == 1 {
 			u.total = 1

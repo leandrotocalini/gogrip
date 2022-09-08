@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func shouldSearch(path string) bool {
+func isEnabled(path string) bool {
 	if strings.Contains(path, ".git") {
 		return false
 	}
@@ -28,7 +28,7 @@ func shouldSearch(path string) bool {
 
 func _getFiles(rootPath string, filesInChan chan string) {
 	filepath.Walk(rootPath, func(path string, file os.FileInfo, err error) error {
-		if !file.IsDir() && shouldSearch(path) {
+		if !file.IsDir() && isEnabled(path) {
 			filesInChan <- path
 		}
 		return nil
@@ -36,7 +36,7 @@ func _getFiles(rootPath string, filesInChan chan string) {
 	close(filesInChan)
 }
 
-func getFiles(rootPath string, buffer int) <-chan string {
+func getFilesEnabledInPath(rootPath string, buffer int) <-chan string {
 	filesInChan := make(chan string, buffer)
 	go _getFiles(rootPath, filesInChan)
 	return filesInChan

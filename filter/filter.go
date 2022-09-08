@@ -38,13 +38,13 @@ func filterFile(wg *sync.WaitGroup, query, filePath string, blockChannel chan Bl
 func searchInFiles(rootPath string, buffer int, query string, blockChannel chan Block) {
 	defer close(blockChannel)
 	var wg sync.WaitGroup
-	for filePath := range getFiles(rootPath, buffer*2) {
+	for filePath := range getFilesEnabledInPath(rootPath, buffer*2) {
 		go filterFile(&wg, query, filePath, blockChannel)
 	}
 	wg.Wait()
 }
 
-func SearchBlocks(rootPath string, buffer int, query string) <-chan Block {
+func Search(rootPath string, buffer int, query string) <-chan Block {
 	blockChannel := make(chan Block, buffer)
 	go searchInFiles(rootPath, buffer, query, blockChannel)
 	return blockChannel
