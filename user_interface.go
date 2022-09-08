@@ -8,15 +8,14 @@ import (
 )
 
 type Screen struct {
-	sideBarBox  *SidebarBox
-	searchBox   *SearchBox
-	contentBox  *ContentBox
-	grid        *ui.Grid
-	blocks      []filter.Block
-	position    int
-	total       int
-	events      <-chan ui.Event
-	sideBarChan chan int
+	sideBarBox *SidebarBox
+	searchBox  *SearchBox
+	contentBox *ContentBox
+	grid       *ui.Grid
+	blocks     []filter.Block
+	position   int
+	total      int
+	events     <-chan ui.Event
 }
 
 func (u *Screen) search() {
@@ -27,6 +26,8 @@ func (u *Screen) search() {
 	for block := range filter.SearchBlocks(".", buffer, searchText) {
 		u.blocks = append(u.blocks, block)
 		if len(u.blocks) == 1 {
+			u.total = 1
+			u.position = 0
 			u.changeBlockFocus(0)
 		}
 	}
@@ -41,8 +42,8 @@ func (u *Screen) changeBlockFocus(position int) {
 		u.position = position
 		u.sideBarBox.c <- []int{u.position, u.total}
 		u.contentBox.contentChan <- u.blocks[u.position]
-		ui.Render(u.grid)
 	}
+	ui.Render(u.grid)
 }
 
 func (u *Screen) run() {
@@ -61,9 +62,11 @@ func (u *Screen) run() {
 				u.changeBlockFocus(u.position - 1)
 			case "<Down>":
 				u.changeBlockFocus(u.position + 1)
+			case "<Enter>":
+				u.search()
+				ui.Render(u.grid)
 			default:
 				u.searchBox.c <- e.ID
-				u.search()
 				ui.Render(u.grid)
 			}
 		case <-ticker:
@@ -90,14 +93,13 @@ func CreateInterface() *Screen {
 		),
 	)
 	return &Screen{
-		sideBarBox:  sideBarBox,
-		searchBox:   searchBox,
-		contentBox:  contentBox,
-		grid:        grid,
-		position:    0,
-		total:       0,
-		blocks:      []filter.Block{},
-		events:      ui.PollEvents(),
-		sideBarChan: make(chan int),
+		sideBarBox: sideBarBox,
+		searchBox:  searchBox,
+		contentBox: contentBox,
+		grid:       grid,
+		position:   0,
+		total:      0,
+		blocks:     []filter.Block{},
+		events:     ui.PollEvents(),
 	}
 }

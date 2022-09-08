@@ -31,5 +31,5 @@ func createSearchBox() *SearchBox {
 	content := widgets.NewParagraph()
 	content.Text = ""
 	content.Title = "Search"
-	return &SearchBox{widget: content, searchText: "", c: make(chan string)}
+	return &SearchBox{widget: content, searchText: "", c: make(chan string, 10)}
 }
