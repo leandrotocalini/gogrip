@@ -1,9 +1,10 @@
 package main
 
 import (
+	"strings"
+
 	"github.com/gizak/termui/v3/widgets"
 	"github.com/leandrotocalini/gogrip/filter"
-	"github.com/leandrotocalini/gogrip/formatter"
 )
 
 type ContentBox struct {
@@ -13,7 +14,7 @@ type ContentBox struct {
 
 func (c *ContentBox) listen() {
 	for block := range c.contentChan {
-		c.widget.Text = formatter.Format(block)
+		c.widget.Text = strings.Join(block.Content[:], "\n")
 		c.widget.Title = block.FilePath
 	}
 }

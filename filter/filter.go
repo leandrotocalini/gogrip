@@ -6,9 +6,6 @@ import (
 	"sync"
 )
 
-
-
-
 func filterFile(wg *sync.WaitGroup, query, filePath string, blockChannel chan Block) {
 	wg.Add(1)
 	defer wg.Done()

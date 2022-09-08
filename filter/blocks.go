@@ -21,12 +21,13 @@ func findBlockOneWay(doc []string, lineNumber, order int) int {
 			if found > 0 && found < len(doc)-1 {
 				found += order
 			} else {
+				if found > 0 && order < 0 {
+					found += order
+				}
 				return found
 			}
 		}
 	}
-
-	return found
 }
 
 func makeBlocks(f Found) map[Key]*Block {
