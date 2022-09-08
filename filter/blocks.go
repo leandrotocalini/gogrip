@@ -12,8 +12,9 @@ type Key struct {
 	LastLine  int
 }
 
-func findBlockOneWay(doc []string, lineNumber, order int) int {
+func findBlockOneWayLoop(doc []string, lineNumber, order int) int {
 	found := lineNumber
+
 	for {
 		if doc[found] == "" {
 			return found
@@ -30,6 +31,21 @@ func findBlockOneWay(doc []string, lineNumber, order int) int {
 	}
 }
 
+func findBlockOneWay(doc []string, lineNumber, order int) int {
+	found := findBlockOneWayLoop(doc, lineNumber, order)
+	if found <= 3 {
+		if order == -1 {
+			return 0
+		} else if len(doc) > 3 {
+			return 3
+		}
+	}
+
+	if len(doc)-found < 4 {
+		return len(doc)
+	}
+	return found
+}
 func makeBlocks(f Found) map[Key]*Block {
 	blocks := make(map[Key]*Block)
 	for _, lineNumber := range f.LineNumbers {

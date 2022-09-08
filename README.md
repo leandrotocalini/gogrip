@@ -5,7 +5,7 @@ A cli tool similar to grep but it show the entired block of lines around the mat
 ```bash
 gogrip "func"  gogrip.go
 ```
-![img.png](img.png)
+[![asciicast](https://asciinema.org/a/tnsIbLPJfeJwr3mfCtaTDze4q.svg)](https://asciinema.org/a/tnsIbLPJfeJwr3mfCtaTDze4q)
 
 ## Installation
 

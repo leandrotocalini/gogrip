@@ -1,6 +1,9 @@
 package filter
 
-import "regexp"
+import (
+	"regexp"
+	"strings"
+)
 
 type Found struct {
 	LineNumbers []int
@@ -20,7 +23,7 @@ func filterScanner(scanner FScanner, query string) ([]string, []int) {
 	content := make([]string, 0)
 	lineNumbers := make([]int, 0)
 	for scanner.Scan() {
-		text := scanner.Text()
+		text := strings.Replace(scanner.Text(), "\t", "  ", 10)
 		content = append(content, text)
 		if r.MatchString(text) {
 			lineNumbers = append(lineNumbers, i)
