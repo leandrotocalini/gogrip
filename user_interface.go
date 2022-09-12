@@ -8,11 +8,11 @@ import (
 )
 
 type Screen struct {
-	sideBarBox *SidebarBox
-	searchBox  *SearchBox
-	contentBox *ContentBox
+	sideBarBox SidebarBoxInterface
+	searchBox  SearchBoxInterface
+	contentBox ContentBoxInterface
 	grid       *ui.Grid
-	blocks     []filter.Block
+	blocks     []filter.BlockInterface
 	position   int
 	total      int
 	events     <-chan ui.Event
@@ -21,28 +21,33 @@ type Screen struct {
 func (u *Screen) search() {
 	searchText := u.searchBox.getText()
 	buffer := 2
-	u.blocks = []filter.Block{}
+	u.blocks = []filter.BlockInterface{}
 	u.position = 0
-	for block := range filter.SearchBlocks(".", buffer, searchText) {
+	for block := range filter.Search(".", buffer, searchText) {
 		u.blocks = append(u.blocks, block)
 		if len(u.blocks) == 1 {
 			u.total = 1
-			u.position = 0
-			u.changeBlockFocus(0)
+			u.changePosition(0)
 		}
 	}
-	u.sideBarBox.widget.Percent = 0
 	u.total = len(u.blocks)
-	u.position = 0
-	u.changeBlockFocus(0)
+	u.changePosition(0)
 }
 
-func (u *Screen) changeBlockFocus(position int) {
+func (u *Screen) changePosition(position int) {
 	if position >= 0 && position < u.total {
 		u.position = position
-		u.sideBarBox.c <- []int{u.position, u.total}
-		u.contentBox.contentChan <- u.blocks[u.position]
+		u.focusOnBlock()
 	}
+}
+
+func (u *Screen) focusOnBlock() {
+	u.sideBarBox.updatePosition(u.position, u.total)
+	u.contentBox.sendEvent(u.blocks[u.position])
+	u.reRender()
+}
+
+func (u *Screen) reRender() {
 	ui.Render(u.grid)
 }
 
@@ -50,7 +55,6 @@ func (u *Screen) run() {
 	ui.Render(u.grid)
 	go u.contentBox.listen()
 	go u.searchBox.listen()
-	go u.sideBarBox.listen()
 	ticker := time.NewTicker(time.Second).C
 	for {
 		select {
@@ -59,27 +63,23 @@ func (u *Screen) run() {
 			case "<C-c>":
 				return
 			case "<Up>":
-				u.changeBlockFocus(u.position - 1)
+				u.changePosition(u.position - 1)
 			case "<Down>":
-				u.changeBlockFocus(u.position + 1)
+				u.changePosition(u.position + 1)
 			case "<Enter>":
 				u.search()
-				ui.Render(u.grid)
+				u.reRender()
 			default:
-				u.searchBox.c <- e.ID
-				ui.Render(u.grid)
+				u.searchBox.sendEvent(e.ID)
+				u.reRender()
 			}
 		case <-ticker:
-			ui.Render(u.grid)
+			u.reRender()
 		}
 	}
 }
 
-func CreateInterface() *Screen {
-	sideBarBox := createSidebarBox()
-	searchBox := createSearchBox()
-	contentBox := createContentBox("FILENAME", "")
-	grid := ui.NewGrid()
+func setScreen(grid *ui.Grid, searchBox *SearchBox, sideBarBox *SidebarBox, contentBox *ContentBox) {
 	termWidth, termHeight := ui.TerminalDimensions()
 	grid.SetRect(0, 0, termWidth, termHeight)
 
@@ -92,6 +92,14 @@ func CreateInterface() *Screen {
 			ui.NewCol((1.0/4)*3, contentBox.widget),
 		),
 	)
+}
+
+func CreateInterface() *Screen {
+	sideBarBox := createSidebarBox()
+	searchBox := createSearchBox()
+	contentBox := createContentBox("FILENAME", "")
+	grid := ui.NewGrid()
+	setScreen(grid, searchBox, sideBarBox, contentBox)
 	return &Screen{
 		sideBarBox: sideBarBox,
 		searchBox:  searchBox,
@@ -99,7 +107,7 @@ func CreateInterface() *Screen {
 		grid:       grid,
 		position:   0,
 		total:      0,
-		blocks:     []filter.Block{},
+		blocks:     []filter.BlockInterface{},
 		events:     ui.PollEvents(),
 	}
 }
