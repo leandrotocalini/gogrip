@@ -36,23 +36,24 @@ func (u *Screen) search() {
 		u.blocks = append(u.blocks, block)
 		if len(u.blocks) == 1 {
 			u.state.total = 1
-			u.changePosition(0)
+			u.moveToBlock(0)
 		}
 		block.SetPosition(len(u.blocks) - 1)
 	}
 	u.state.total = len(u.blocks)
-	u.changePosition(0)
+	u.moveToBlock(0)
+	u.reRender()
 }
 
-func (u *Screen) changePosition(position int) {
+func (u *Screen) moveToBlock(position int) {
 	if position >= 0 && position < u.state.total {
 		u.state.position = position
 		u.state.currentBlock = u.blocks[u.state.position]
-		u.focusOnBlock()
+		u.propagateState()
 	}
 }
 
-func (u *Screen) focusOnBlock() {
+func (u *Screen) propagateState() {
 	for _, w := range u.listeners {
 		w.update(u.state)
 	}
@@ -76,6 +77,15 @@ func (u *Screen) focusOnNextWidget() {
 			return
 		}
 	}
+	u.widgets[0].activate()
+	u.reRender()
+}
+
+func (u *Screen) nextBlock() {
+	u.moveToBlock(u.state.position + 1)
+}
+func (u *Screen) previousBlock() {
+	u.moveToBlock(u.state.position - 1)
 }
 
 func (u *Screen) eventHandler(e ui.Event) bool {
@@ -84,16 +94,15 @@ func (u *Screen) eventHandler(e ui.Event) bool {
 		return false
 	case "<Up>":
 		if u.contentBox.isActive() {
-			u.changePosition(u.state.position - 1)
+			u.previousBlock()
 		}
 	case "<Down>":
 		if u.contentBox.isActive() {
-			u.changePosition(u.state.position + 1)
+			u.nextBlock()
 		}
 	case "<Enter>":
 		if u.searchBox.isActive() {
 			u.search()
-			u.reRender()
 		}
 	case "<Tab>":
 		u.focusOnNextWidget()
