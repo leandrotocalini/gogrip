@@ -7,26 +7,21 @@ import (
 
 type ContentBox struct {
 	widget  *widgets.Table
-	channel chan BlockInterface
+	channel chan State
 	active  bool
 }
 
 type ContentBoxInterface interface {
 	WidgetInterface
 	listen()
-	sendEvent(BlockInterface)
-}
-
-func (s *ContentBox) sendEvent(message BlockInterface) {
-	s.channel <- message
 }
 
 func (c *ContentBox) listen() {
-	for block := range c.channel {
-		c.widget.Rows = block.GetContent()
-		c.widget.Title = block.GetTitle()
+	for state := range c.channel {
+		c.widget.Rows = state.currentBlock.GetContent()
+		c.widget.Title = state.currentBlock.GetTitle()
 		c.widget.ColumnResizer()
-		c.widget.RowStyles[block.GetLine()] = ui.NewStyle(ui.ColorWhite, ui.ColorRed, ui.ModifierBold)
+		c.widget.RowStyles[state.currentBlock.GetLine()] = ui.NewStyle(ui.ColorWhite, ui.ColorRed, ui.ModifierBold)
 	}
 }
 
@@ -47,9 +42,13 @@ func (c *ContentBox) getBoxItem() ui.GridItem {
 	return ui.NewRow((1.0/15)*13.5, c.widget)
 }
 
-func createContentBox(title, text string) *ContentBox {
+func (c *ContentBox) update(state State) {
+	c.channel <- state
+}
+
+func createContentBox() *ContentBox {
 	content := widgets.NewTable()
-	content.Title = title
+	content.Title = "Filename"
 	content.TextStyle = ui.NewStyle(ui.ColorWhite)
 	content.Rows = [][]string{
 		[]string{"", ""},
@@ -62,7 +61,7 @@ func createContentBox(title, text string) *ContentBox {
 	//content.BorderStyle.Fg = ui.ColorRed
 	return &ContentBox{
 		widget:  content,
-		channel: make(chan BlockInterface),
+		channel: make(chan State),
 		active:  false,
 	}
 }

@@ -61,6 +61,10 @@ func (s *SearchBox) getBoxItem() ui.GridItem {
 	return ui.NewRow(1.0/15, s.widget)
 }
 
+func (s *SearchBox) update(state State) {
+	// pass
+}
+
 func createSearchBox() *SearchBox {
 	search := widgets.NewParagraph()
 	search.Text = ""

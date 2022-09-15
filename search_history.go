@@ -6,8 +6,9 @@ import (
 )
 
 type SearchHistoryBox struct {
-	widget *widgets.Table
-	active bool
+	widget  *widgets.Table
+	active  bool
+	channel chan State
 }
 
 type SearchHistoryBoxInterface interface {
@@ -20,7 +21,25 @@ func (s *SearchHistoryBox) getBoxItem() ui.GridItem {
 }
 
 func (s *SearchHistoryBox) add(text string) {
-	s.widget.Rows = append(s.widget.Rows, []string{text})
+	shouldAppend := true
+	for _, val := range s.widget.Rows {
+		if val[0] == text {
+			shouldAppend = false
+		}
+	}
+	if shouldAppend {
+		s.widget.Rows = append(s.widget.Rows, []string{text})
+	}
+}
+
+func (s *SearchHistoryBox) listen() {
+	for state := range s.channel {
+		s.add(state.searchString)
+	}
+}
+
+func (s *SearchHistoryBox) update(state State) {
+	s.channel <- state
 }
 
 func (s *SearchHistoryBox) isActive() bool {
@@ -45,7 +64,8 @@ func createSearchHistoryBox() *SearchHistoryBox {
 		[]string{""},
 	}
 	return &SearchHistoryBox{
-		widget: sideBar,
-		active: false,
+		widget:  sideBar,
+		active:  false,
+		channel: make(chan State),
 	}
 }

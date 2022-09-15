@@ -11,19 +11,18 @@ type ProgressBar struct {
 	widget   *widgets.Gauge
 	position int
 	total    int
-	channel  chan []int
+	channel  chan State
 	active   bool
 }
 
 type ProgressBarInterface interface {
 	listen()
-	updatePosition(int, int)
 }
 
 func (s *ProgressBar) listen() {
-	for progress := range s.channel {
-		s.position = progress[0]
-		s.total = progress[1]
+	for state := range s.channel {
+		s.position = state.position
+		s.total = state.total
 		s.refresh()
 	}
 }
@@ -51,10 +50,8 @@ func (s *ProgressBar) refresh() {
 	}
 }
 
-func (s *ProgressBar) updatePosition(position, total int) {
-	s.position = position
-	s.total = total
-	s.refresh()
+func (s *ProgressBar) update(state State) {
+	s.channel <- state
 }
 
 func (s *ProgressBar) isActive() bool {
@@ -78,7 +75,7 @@ func createProgressBar() *ProgressBar {
 	sideBar.Label = " "
 	return &ProgressBar{
 		widget:  sideBar,
-		channel: make(chan []int),
+		channel: make(chan State),
 		active:  false,
 	}
 }

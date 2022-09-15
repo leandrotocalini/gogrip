@@ -6,47 +6,56 @@ import (
 	ui "github.com/gizak/termui/v3"
 )
 
+type State struct {
+	currentBlock BlockInterface
+	searchString string
+	total        int
+	position     int
+}
+
 type Screen struct {
 	progressBar      ProgressBarInterface
 	searchBox        SearchBoxInterface
 	contentBox       ContentBoxInterface
 	searchHistoryBox SearchHistoryBoxInterface
 	widgets          []WidgetInterface
+	listeners        []WidgetInterface
 	grid             *ui.Grid
 	blocks           []BlockInterface
-	position         int
-	total            int
+	state            State
 	events           <-chan ui.Event
 }
 
 func (u *Screen) search() {
 	searchText := u.searchBox.getText()
-	u.searchHistoryBox.add(searchText)
+	u.state.searchString = searchText
 	buffer := 2
 	u.blocks = []BlockInterface{}
-	u.position = 0
+	u.state.position = 0
 	for block := range Search(".", buffer, searchText) {
 		u.blocks = append(u.blocks, block)
 		if len(u.blocks) == 1 {
-			u.total = 1
+			u.state.total = 1
 			u.changePosition(0)
 		}
 		block.SetPosition(len(u.blocks) - 1)
 	}
-	u.total = len(u.blocks)
+	u.state.total = len(u.blocks)
 	u.changePosition(0)
 }
 
 func (u *Screen) changePosition(position int) {
-	if position >= 0 && position < u.total {
-		u.position = position
+	if position >= 0 && position < u.state.total {
+		u.state.position = position
+		u.state.currentBlock = u.blocks[u.state.position]
 		u.focusOnBlock()
 	}
 }
 
 func (u *Screen) focusOnBlock() {
-	u.progressBar.updatePosition(u.position, u.total)
-	u.contentBox.sendEvent(u.blocks[u.position])
+	for _, w := range u.listeners {
+		w.update(u.state)
+	}
 	u.reRender()
 }
 
@@ -69,37 +78,45 @@ func (u *Screen) focusOnNextWidget() {
 	}
 }
 
+func (u *Screen) eventHandler(e ui.Event) bool {
+	switch e.ID {
+	case "<C-c>":
+		return false
+	case "<Up>":
+		if u.contentBox.isActive() {
+			u.changePosition(u.state.position - 1)
+		}
+	case "<Down>":
+		if u.contentBox.isActive() {
+			u.changePosition(u.state.position + 1)
+		}
+	case "<Enter>":
+		if u.searchBox.isActive() {
+			u.search()
+			u.reRender()
+		}
+	case "<Tab>":
+		u.focusOnNextWidget()
+	default:
+		if u.searchBox.isActive() {
+			u.searchBox.sendEvent(e.ID)
+			u.reRender()
+		}
+	}
+	return true
+}
+
 func (u *Screen) run() {
 	ui.Render(u.grid)
-	go u.contentBox.listen()
-	go u.searchBox.listen()
+	for _, w := range u.listeners {
+		go w.listen()
+	}
 	ticker := time.NewTicker(time.Second).C
 	for {
 		select {
 		case e := <-u.events:
-			switch e.ID {
-			case "<C-c>":
+			if !u.eventHandler(e) {
 				return
-			case "<Up>":
-				if u.contentBox.isActive() {
-					u.changePosition(u.position - 1)
-				}
-			case "<Down>":
-				if u.contentBox.isActive() {
-					u.changePosition(u.position + 1)
-				}
-			case "<Enter>":
-				if u.searchBox.isActive() {
-					u.search()
-					u.reRender()
-				}
-			case "<Tab>":
-				u.focusOnNextWidget()
-			default:
-				if u.searchBox.isActive() {
-					u.searchBox.sendEvent(e.ID)
-					u.reRender()
-				}
 			}
 		case <-ticker:
 			u.reRender()
@@ -134,7 +151,7 @@ func CreateInterface() *Screen {
 	searchBox := createSearchBox()
 	searchBox.activate()
 	searchHistoryBox := createSearchHistoryBox()
-	contentBox := createContentBox("FILENAME", "")
+	contentBox := createContentBox()
 	grid := ui.NewGrid()
 	setScreen(grid, searchHistoryBox, searchBox, progressBar, contentBox)
 	return &Screen{
@@ -143,10 +160,19 @@ func CreateInterface() *Screen {
 		contentBox:       contentBox,
 		searchHistoryBox: searchHistoryBox,
 		widgets:          []WidgetInterface{searchBox, contentBox},
-		grid:             grid,
-		position:         0,
-		total:            0,
-		blocks:           []BlockInterface{},
-		events:           ui.PollEvents(),
+		listeners: []WidgetInterface{
+			searchBox,
+			searchHistoryBox,
+			contentBox,
+			progressBar,
+		},
+		grid: grid,
+		state: State{
+			position:     0,
+			total:        0,
+			searchString: "",
+		},
+		blocks: []BlockInterface{},
+		events: ui.PollEvents(),
 	}
 }
