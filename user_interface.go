@@ -4,31 +4,34 @@ import (
 	"time"
 
 	ui "github.com/gizak/termui/v3"
-	"github.com/leandrotocalini/gogrip/filter"
 )
 
 type Screen struct {
-	sideBarBox SidebarBoxInterface
-	searchBox  SearchBoxInterface
-	contentBox ContentBoxInterface
-	grid       *ui.Grid
-	blocks     []filter.BlockInterface
-	position   int
-	total      int
-	events     <-chan ui.Event
+	progressBar      ProgressBarInterface
+	searchBox        SearchBoxInterface
+	contentBox       ContentBoxInterface
+	searchHistoryBox SearchHistoryBoxInterface
+	widgets          []WidgetInterface
+	grid             *ui.Grid
+	blocks           []BlockInterface
+	position         int
+	total            int
+	events           <-chan ui.Event
 }
 
 func (u *Screen) search() {
 	searchText := u.searchBox.getText()
+	u.searchHistoryBox.add(searchText)
 	buffer := 2
-	u.blocks = []filter.BlockInterface{}
+	u.blocks = []BlockInterface{}
 	u.position = 0
-	for block := range filter.Search(".", buffer, searchText) {
+	for block := range Search(".", buffer, searchText) {
 		u.blocks = append(u.blocks, block)
 		if len(u.blocks) == 1 {
 			u.total = 1
 			u.changePosition(0)
 		}
+		block.SetPosition(len(u.blocks) - 1)
 	}
 	u.total = len(u.blocks)
 	u.changePosition(0)
@@ -42,13 +45,28 @@ func (u *Screen) changePosition(position int) {
 }
 
 func (u *Screen) focusOnBlock() {
-	u.sideBarBox.updatePosition(u.position, u.total)
+	u.progressBar.updatePosition(u.position, u.total)
 	u.contentBox.sendEvent(u.blocks[u.position])
 	u.reRender()
 }
 
 func (u *Screen) reRender() {
 	ui.Render(u.grid)
+}
+
+func (u *Screen) focusOnNextWidget() {
+	for idx, val := range u.widgets {
+		if val.isActive() {
+			val.deactivate()
+			next := 0
+			if idx < len(u.widgets)-1 {
+				next = idx + 1
+			}
+			u.widgets[next].activate()
+			u.reRender()
+			return
+		}
+	}
 }
 
 func (u *Screen) run() {
@@ -63,15 +81,25 @@ func (u *Screen) run() {
 			case "<C-c>":
 				return
 			case "<Up>":
-				u.changePosition(u.position - 1)
+				if u.contentBox.isActive() {
+					u.changePosition(u.position - 1)
+				}
 			case "<Down>":
-				u.changePosition(u.position + 1)
+				if u.contentBox.isActive() {
+					u.changePosition(u.position + 1)
+				}
 			case "<Enter>":
-				u.search()
-				u.reRender()
+				if u.searchBox.isActive() {
+					u.search()
+					u.reRender()
+				}
+			case "<Tab>":
+				u.focusOnNextWidget()
 			default:
-				u.searchBox.sendEvent(e.ID)
-				u.reRender()
+				if u.searchBox.isActive() {
+					u.searchBox.sendEvent(e.ID)
+					u.reRender()
+				}
 			}
 		case <-ticker:
 			u.reRender()
@@ -79,35 +107,46 @@ func (u *Screen) run() {
 	}
 }
 
-func setScreen(grid *ui.Grid, searchBox *SearchBox, sideBarBox *SidebarBox, contentBox *ContentBox) {
+func setScreen(
+	grid *ui.Grid,
+	searchHistoryBox *SearchHistoryBox,
+	searchBox *SearchBox,
+	progressBar *ProgressBar,
+	contentBox *ContentBox,
+) {
 	termWidth, termHeight := ui.TerminalDimensions()
 	grid.SetRect(0, 0, termWidth, termHeight)
 
 	grid.Set(
-		ui.NewRow(1,
-			ui.NewCol(1.0/4,
-				ui.NewRow(1.0/15, searchBox.widget),
-				ui.NewRow(1.0/15, sideBarBox.widget),
-			),
-			ui.NewCol((1.0/4)*3, contentBox.widget),
+		ui.NewCol(1.0/4,
+			searchBox.getBoxItem(),
+			searchHistoryBox.getBoxItem(),
+		),
+		ui.NewCol((1.0/4)*3,
+			progressBar.getBoxItem(),
+			contentBox.getBoxItem(),
 		),
 	)
 }
 
 func CreateInterface() *Screen {
-	sideBarBox := createSidebarBox()
+	progressBar := createProgressBar()
 	searchBox := createSearchBox()
+	searchBox.activate()
+	searchHistoryBox := createSearchHistoryBox()
 	contentBox := createContentBox("FILENAME", "")
 	grid := ui.NewGrid()
-	setScreen(grid, searchBox, sideBarBox, contentBox)
+	setScreen(grid, searchHistoryBox, searchBox, progressBar, contentBox)
 	return &Screen{
-		sideBarBox: sideBarBox,
-		searchBox:  searchBox,
-		contentBox: contentBox,
-		grid:       grid,
-		position:   0,
-		total:      0,
-		blocks:     []filter.BlockInterface{},
-		events:     ui.PollEvents(),
+		progressBar:      progressBar,
+		searchBox:        searchBox,
+		contentBox:       contentBox,
+		searchHistoryBox: searchHistoryBox,
+		widgets:          []WidgetInterface{searchBox, contentBox},
+		grid:             grid,
+		position:         0,
+		total:            0,
+		blocks:           []BlockInterface{},
+		events:           ui.PollEvents(),
 	}
 }

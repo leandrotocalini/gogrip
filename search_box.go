@@ -1,6 +1,7 @@
 package main
 
 import (
+	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
 )
 
@@ -8,12 +9,28 @@ type SearchBox struct {
 	searchText string
 	widget     *widgets.Paragraph
 	channel    chan string
+	active     bool
 }
 
 type SearchBoxInterface interface {
+	WidgetInterface
 	listen()
 	getText() string
 	sendEvent(string)
+}
+
+func (s *SearchBox) isActive() bool {
+	return s.active
+}
+
+func (s *SearchBox) activate() {
+	s.widget.BorderStyle.Fg = ui.ColorRed
+	s.active = true
+}
+
+func (s *SearchBox) deactivate() {
+	s.widget.BorderStyle.Fg = ui.ColorWhite
+	s.active = false
 }
 
 func (s *SearchBox) listen() {
@@ -40,10 +57,18 @@ func (s *SearchBox) sendEvent(message string) {
 	s.channel <- message
 }
 
+func (s *SearchBox) getBoxItem() ui.GridItem {
+	return ui.NewRow(1.0/15, s.widget)
+}
+
 func createSearchBox() *SearchBox {
 	search := widgets.NewParagraph()
 	search.Text = ""
 	search.Title = "Search: "
-	search.Border = false
-	return &SearchBox{widget: search, searchText: "", channel: make(chan string, 10)}
+	return &SearchBox{
+		widget:     search,
+		searchText: "",
+		channel:    make(chan string, 10),
+		active:     false,
+	}
 }
