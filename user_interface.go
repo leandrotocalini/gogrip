@@ -88,8 +88,8 @@ func (u *Screen) previousBlock() {
 	u.moveToBlock(u.state.position - 1)
 }
 
-func (u *Screen) eventHandler(e ui.Event) bool {
-	switch e.ID {
+func (u *Screen) keyEventHandler(key string) bool {
+	switch key {
 	case "<C-c>":
 		return false
 	case "<Up>":
@@ -108,7 +108,7 @@ func (u *Screen) eventHandler(e ui.Event) bool {
 		u.focusOnNextWidget()
 	default:
 		if u.searchBox.isActive() {
-			u.searchBox.sendEvent(e.ID)
+			u.searchBox.sendEvent(key)
 			u.reRender()
 		}
 	}
@@ -124,7 +124,7 @@ func (u *Screen) run() {
 	for {
 		select {
 		case e := <-u.events:
-			if !u.eventHandler(e) {
+			if !u.keyEventHandler(e.ID) {
 				return
 			}
 		case <-ticker:
