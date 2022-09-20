@@ -1,3 +1,5 @@
 coverage:
-	go test -coverprofile cover.out ./...
-	go tool cover -html=cover.out -o cover.html
+	go test -coverprofile=coverage.out ./... ;    go tool cover -func=coverage.out
+
+test:
+	go test ./...

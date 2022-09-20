@@ -12,7 +12,7 @@ type SearchHistoryBox struct {
 }
 
 type SearchHistoryBoxInterface interface {
-	WidgetInterface
+	GoGripWidget
 	add(string)
 }
 

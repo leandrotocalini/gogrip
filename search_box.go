@@ -13,7 +13,7 @@ type SearchBox struct {
 }
 
 type SearchBoxInterface interface {
-	WidgetInterface
+	GoGripWidget
 	listen()
 	getText() string
 	sendEvent(string)
@@ -33,19 +33,24 @@ func (s *SearchBox) deactivate() {
 	s.active = false
 }
 
+func (s *SearchBox) listenText(text string) {
+	if text == "<Backspace>" && len(s.searchText) > 0 {
+		s.searchText = s.searchText[:len(s.searchText)-1]
+		s.widget.Text = s.searchText
+
+	} else if text == "<Space>" {
+		s.searchText = s.searchText + " "
+		s.widget.Text = s.searchText
+	} else if len(text) == 1 {
+		s.searchText = s.searchText + text
+		s.widget.Text = s.searchText
+	}
+}
+
+// notest
 func (s *SearchBox) listen() {
 	for text := range s.channel {
-		if text == "<Backspace>" && len(s.searchText) > 0 {
-			s.searchText = s.searchText[:len(s.searchText)-1]
-			s.widget.Text = s.searchText
-
-		} else if text == "<Space>" {
-			s.searchText = s.searchText + " "
-			s.widget.Text = s.searchText
-		} else if len(text) == 1 {
-			s.searchText = s.searchText + text
-			s.widget.Text = s.searchText
-		}
+		s.listenText(text)
 	}
 }
 

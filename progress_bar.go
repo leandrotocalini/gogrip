@@ -16,6 +16,7 @@ type ProgressBar struct {
 }
 
 type ProgressBarInterface interface {
+	GoGripWidget
 	listen()
 }
 

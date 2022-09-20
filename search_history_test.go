@@ -12,9 +12,6 @@ func TestCreateSearchHistoryAndActive(t *testing.T) {
 	searchH.activate()
 	assert.Equal(t, searchH.isActive(), true)
 	assert.Equal(t, searchH.widget.BorderStyle.Fg, ui.ColorRed)
-}
-func TestCreateSearchHistoryAndInactive(t *testing.T) {
-	searchH := createSearchHistoryBox()
 	searchH.deactivate()
 	assert.Equal(t, searchH.isActive(), false)
 	assert.Equal(t, searchH.widget.BorderStyle.Fg, ui.ColorWhite)

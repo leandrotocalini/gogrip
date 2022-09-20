@@ -12,7 +12,7 @@ type ContentBox struct {
 }
 
 type ContentBoxInterface interface {
-	WidgetInterface
+	GoGripWidget
 	listen()
 }
 

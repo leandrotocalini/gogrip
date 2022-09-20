@@ -18,11 +18,12 @@ type Screen struct {
 	searchBox        SearchBoxInterface
 	contentBox       ContentBoxInterface
 	searchHistoryBox SearchHistoryBoxInterface
-	widgets          []WidgetInterface
-	listeners        []WidgetInterface
+	widgets          []GoGripWidget
+	listeners        []GoGripWidget
 	grid             *ui.Grid
 	blocks           []BlockInterface
 	state            State
+	active           bool
 	events           <-chan ui.Event
 }
 
@@ -42,7 +43,7 @@ func (u *Screen) search() {
 	}
 	u.state.total = len(u.blocks)
 	u.moveToBlock(0)
-	u.reRender()
+	u.renderScreen()
 }
 
 func (u *Screen) moveToBlock(position int) {
@@ -57,11 +58,13 @@ func (u *Screen) propagateState() {
 	for _, w := range u.listeners {
 		w.update(u.state)
 	}
-	u.reRender()
+	u.renderScreen()
 }
 
-func (u *Screen) reRender() {
-	ui.Render(u.grid)
+func (u *Screen) renderScreen() {
+	if u.active {
+		ui.Render(u.grid)
+	}
 }
 
 func (u *Screen) focusOnNextWidget() {
@@ -73,12 +76,12 @@ func (u *Screen) focusOnNextWidget() {
 				next = idx + 1
 			}
 			u.widgets[next].activate()
-			u.reRender()
+			u.renderScreen()
 			return
 		}
 	}
 	u.widgets[0].activate()
-	u.reRender()
+	u.renderScreen()
 }
 
 func (u *Screen) nextBlock() {
@@ -109,14 +112,15 @@ func (u *Screen) keyEventHandler(key string) bool {
 	default:
 		if u.searchBox.isActive() {
 			u.searchBox.sendEvent(key)
-			u.reRender()
+			u.renderScreen()
 		}
 	}
 	return true
 }
 
 func (u *Screen) run() {
-	ui.Render(u.grid)
+	u.setScreen()
+	u.renderScreen()
 	for _, w := range u.listeners {
 		go w.listen()
 	}
@@ -128,31 +132,26 @@ func (u *Screen) run() {
 				return
 			}
 		case <-ticker:
-			u.reRender()
+			u.renderScreen()
 		}
 	}
 }
 
-func setScreen(
-	grid *ui.Grid,
-	searchHistoryBox *SearchHistoryBox,
-	searchBox *SearchBox,
-	progressBar *ProgressBar,
-	contentBox *ContentBox,
-) {
+func (u *Screen) setScreen() {
 	termWidth, termHeight := ui.TerminalDimensions()
-	grid.SetRect(0, 0, termWidth, termHeight)
+	u.grid.SetRect(0, 0, termWidth, termHeight)
 
-	grid.Set(
+	u.grid.Set(
 		ui.NewCol(1.0/4,
-			searchBox.getBoxItem(),
-			searchHistoryBox.getBoxItem(),
+			u.searchBox.getBoxItem(),
+			u.searchHistoryBox.getBoxItem(),
 		),
 		ui.NewCol((1.0/4)*3,
-			progressBar.getBoxItem(),
-			contentBox.getBoxItem(),
+			u.progressBar.getBoxItem(),
+			u.contentBox.getBoxItem(),
 		),
 	)
+	u.active = true
 }
 
 func CreateInterface() *Screen {
@@ -162,14 +161,13 @@ func CreateInterface() *Screen {
 	searchHistoryBox := createSearchHistoryBox()
 	contentBox := createContentBox()
 	grid := ui.NewGrid()
-	setScreen(grid, searchHistoryBox, searchBox, progressBar, contentBox)
 	return &Screen{
 		progressBar:      progressBar,
 		searchBox:        searchBox,
 		contentBox:       contentBox,
 		searchHistoryBox: searchHistoryBox,
-		widgets:          []WidgetInterface{searchBox, contentBox},
-		listeners: []WidgetInterface{
+		widgets:          []GoGripWidget{searchBox, contentBox},
+		listeners: []GoGripWidget{
 			searchBox,
 			searchHistoryBox,
 			contentBox,
@@ -181,6 +179,7 @@ func CreateInterface() *Screen {
 			total:        0,
 			searchString: "",
 		},
+		active: false,
 		blocks: []BlockInterface{},
 		events: ui.PollEvents(),
 	}
