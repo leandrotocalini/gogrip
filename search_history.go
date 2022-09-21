@@ -38,7 +38,7 @@ func (s *SearchHistoryBox) listen() {
 	}
 }
 
-func (s *SearchHistoryBox) update(state State) {
+func (s *SearchHistoryBox) expose(state State) {
 	s.channel <- state
 }
 

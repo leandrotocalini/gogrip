@@ -51,7 +51,7 @@ func (s *ProgressBar) refresh() {
 	}
 }
 
-func (s *ProgressBar) update(state State) {
+func (s *ProgressBar) expose(state State) {
 	s.channel <- state
 }
 

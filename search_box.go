@@ -13,10 +13,27 @@ type SearchBox struct {
 }
 
 type SearchBoxInterface interface {
-	GoGripWidget
-	listen()
+	EventManagerWidget
 	getText() string
-	sendEvent(string)
+}
+
+func (s *SearchBox) search(state State) State {
+	searchText := s.getText()
+	state.searchString = searchText
+	buffer := 2
+	state.blocks = []BlockInterface{}
+	state.position = 0
+	for block := range Search(".", buffer, searchText) {
+		state.blocks = append(state.blocks, block)
+		if len(state.blocks) == 1 {
+			state.total = 1
+			state.moveToBlock(0)
+		}
+		block.SetPosition(len(state.blocks) - 1)
+	}
+	state.total = len(state.blocks)
+	state.moveToBlock(0)
+	return state
 }
 
 func (s *SearchBox) isActive() bool {
@@ -33,40 +50,38 @@ func (s *SearchBox) deactivate() {
 	s.active = false
 }
 
-func (s *SearchBox) listenText(text string) {
-	if text == "<Backspace>" && len(s.searchText) > 0 {
-		s.searchText = s.searchText[:len(s.searchText)-1]
-		s.widget.Text = s.searchText
-
-	} else if text == "<Space>" {
-		s.searchText = s.searchText + " "
-		s.widget.Text = s.searchText
-	} else if len(text) == 1 {
-		s.searchText = s.searchText + text
-		s.widget.Text = s.searchText
-	}
-}
-
 // notest
 func (s *SearchBox) listen() {
-	for text := range s.channel {
-		s.listenText(text)
-	}
+	//
 }
 
 func (s *SearchBox) getText() string {
 	return s.searchText
 }
 
-func (s *SearchBox) sendEvent(message string) {
-	s.channel <- message
+func (s *SearchBox) newEvent(state State, message string) State {
+	if message == "<Backspace>" && len(s.searchText) > 0 {
+		s.searchText = s.searchText[:len(s.searchText)-1]
+		s.widget.Text = s.searchText
+
+	} else if message == "<Space>" {
+		s.searchText = s.searchText + " "
+		s.widget.Text = s.searchText
+	} else if message == "<Enter>" {
+		state.searchString = s.searchText
+		state = s.search(state)
+	} else if len(message) == 1 {
+		s.searchText = s.searchText + message
+		s.widget.Text = s.searchText
+	}
+	return state
 }
 
 func (s *SearchBox) getBoxItem() ui.GridItem {
 	return ui.NewRow(1.0/15, s.widget)
 }
 
-func (s *SearchBox) update(state State) {
+func (s *SearchBox) expose(state State) {
 	// pass
 }
 

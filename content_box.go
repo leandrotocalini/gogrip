@@ -12,16 +12,17 @@ type ContentBox struct {
 }
 
 type ContentBoxInterface interface {
-	GoGripWidget
-	listen()
+	EventManagerWidget
 }
 
 func (c *ContentBox) listen() {
 	for state := range c.channel {
-		c.widget.Rows = state.currentBlock.GetContent()
-		c.widget.Title = state.currentBlock.GetTitle()
-		c.widget.ColumnResizer()
-		c.widget.RowStyles[state.currentBlock.GetLine()] = ui.NewStyle(ui.ColorWhite, ui.ColorRed, ui.ModifierBold)
+		if state.total > 0 {
+			c.widget.Rows = state.currentBlock.GetContent()
+			c.widget.Title = state.currentBlock.GetTitle()
+			c.widget.ColumnResizer()
+			c.widget.RowStyles[state.currentBlock.GetLine()] = ui.NewStyle(ui.ColorWhite, ui.ColorRed, ui.ModifierBold)
+		}
 	}
 }
 
@@ -42,8 +43,18 @@ func (c *ContentBox) getBoxItem() ui.GridItem {
 	return ui.NewRow((1.0/15)*13.5, c.widget)
 }
 
-func (c *ContentBox) update(state State) {
+func (c *ContentBox) expose(state State) {
 	c.channel <- state
+}
+
+func (c *ContentBox) newEvent(state State, message string) State {
+	switch message {
+	case "<Up>":
+		state.previousBlock()
+	case "<Down>":
+		state.nextBlock()
+	}
+	return state
 }
 
 func createContentBox() *ContentBox {

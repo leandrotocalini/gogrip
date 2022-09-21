@@ -2,7 +2,6 @@ package main
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -16,6 +15,9 @@ func TestScreen_InterfaceExit(t *testing.T) {
 
 func TestScreen_MoveUp(t *testing.T) {
 	userInterface := CreateInterface()
+	for _, w := range userInterface.exposers {
+		go w.listen()
+	}
 	key := "<Up>"
 	result := userInterface.keyEventHandler(key)
 	assert.True(t, result)
@@ -25,6 +27,9 @@ func TestScreen_MoveDown(t *testing.T) {
 	userInterface := CreateInterface()
 	userInterface.searchBox.deactivate()
 	userInterface.contentBox.activate()
+	for _, w := range userInterface.exposers {
+		go w.listen()
+	}
 	key := "<Up>"
 	result := userInterface.keyEventHandler(key)
 	assert.True(t, result)
@@ -45,17 +50,4 @@ func TestScreen_FocusOnContent(t *testing.T) {
 		}
 	}
 	assert.True(t, false)
-}
-
-func TestScreen_Search(t *testing.T) {
-	userInterface := CreateInterface()
-	for _, w := range userInterface.listeners {
-		go w.listen()
-	}
-	for _, s := range "TestScreen_Search" {
-		userInterface.keyEventHandler(string(s))
-	}
-	userInterface.keyEventHandler("<Enter>")
-	time.Sleep(2 * time.Second)
-	assert.Equal(t, userInterface.state.position, 0)
 }

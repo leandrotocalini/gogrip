@@ -25,24 +25,49 @@ func Test_SearchBoxActive(t *testing.T) {
 
 func Test_SearchBoxListenText(t *testing.T) {
 	searchH := createSearchBox()
-	searchH.listenText("b")
-	searchH.listenText("a")
-	searchH.listenText("t")
+	state := State{
+		position:     0,
+		total:        0,
+		searchString: "",
+		blocks:       []BlockInterface{},
+	}
+	state = searchH.newEvent(state, "b")
+	searchH.newEvent(state, "a")
+	searchH.newEvent(state, "t")
+	state = searchH.newEvent(state, "<Enter>")
 	assert.Equal(t, searchH.getText(), "bat")
+	assert.Equal(t, searchH.getText(), state.searchString)
+
 }
 
 func Test_SearchBoxListenBackSpace(t *testing.T) {
 	searchH := createSearchBox()
-	searchH.listenText("b")
-	searchH.listenText("<Backspace>")
-	searchH.listenText("t")
+	state := State{
+		position:     0,
+		total:        0,
+		searchString: "",
+		blocks:       []BlockInterface{},
+	}
+	state = searchH.newEvent(state, "b")
+	state = searchH.newEvent(state, "<Backspace>")
+	searchH.newEvent(state, "t")
+	state = searchH.newEvent(state, "<Enter>")
+	assert.Equal(t, searchH.getText(), state.searchString)
 	assert.Equal(t, searchH.getText(), "t")
 }
 
 func Test_SearchBoxListenTextSpace(t *testing.T) {
 	searchH := createSearchBox()
-	searchH.listenText("b")
-	searchH.listenText("<Space>")
-	searchH.listenText("t")
+	state := State{
+		position:     0,
+		total:        0,
+		searchString: "",
+		blocks:       []BlockInterface{},
+	}
+	state = searchH.newEvent(state, "b")
+	state = searchH.newEvent(state, "<Space>")
+	searchH.newEvent(state, "t")
+	state = searchH.newEvent(state, "<Enter>")
+	assert.Equal(t, searchH.getText(), state.searchString)
 	assert.Equal(t, searchH.getText(), "b t")
 }
