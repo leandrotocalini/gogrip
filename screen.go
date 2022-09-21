@@ -11,6 +11,7 @@ type Screen struct {
 	searchBox        EventManagerWidget
 	contentBox       ContentBoxInterface
 	searchHistoryBox SearchHistoryBoxInterface
+	stateExposer     StateExposer
 	eventManagers    []EventManagerWidget
 	exposers         []ExposerWidget
 	grid             *ui.Grid
@@ -93,11 +94,12 @@ func (u *Screen) setScreen() {
 	u.grid.SetRect(0, 0, termWidth, termHeight)
 
 	u.grid.Set(
-		ui.NewCol(1.0/4,
+		ui.NewCol(1.0/6,
 			u.searchBox.getBoxItem(),
 			u.searchHistoryBox.getBoxItem(),
+			u.stateExposer.getBoxItem(),
 		),
-		ui.NewCol((1.0/4)*3,
+		ui.NewCol((1.0/6)*5,
 			u.progressBar.getBoxItem(),
 			u.contentBox.getBoxItem(),
 		),
@@ -111,18 +113,21 @@ func CreateInterface() *Screen {
 	searchBox.activate()
 	searchHistoryBox := createSearchHistoryBox()
 	contentBox := createContentBox()
+	stateExposer := createStateExposer()
 	grid := ui.NewGrid()
 	return &Screen{
 		progressBar:      progressBar,
 		searchBox:        searchBox,
 		contentBox:       contentBox,
 		searchHistoryBox: searchHistoryBox,
+		stateExposer:     *stateExposer,
 		eventManagers:    []EventManagerWidget{searchBox, contentBox},
 		exposers: []ExposerWidget{
 			searchBox,
 			searchHistoryBox,
 			contentBox,
 			progressBar,
+			stateExposer,
 		},
 		grid: grid,
 		state: State{
