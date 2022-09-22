@@ -8,12 +8,12 @@ import (
 
 type Screen struct {
 	progressBar      ProgressBarInterface
-	searchBox        EventManagerWidget
+	searchBox        EventManager
 	contentBox       ContentBoxInterface
 	searchHistoryBox SearchHistoryBoxInterface
 	stateExposer     StateExposer
-	eventManagers    []EventManagerWidget
-	exposers         []ExposerWidget
+	eventManagers    []EventManager
+	exposers         []Listener
 	grid             *ui.Grid
 	state            State
 	active           bool
@@ -121,8 +121,8 @@ func CreateInterface() *Screen {
 		contentBox:       contentBox,
 		searchHistoryBox: searchHistoryBox,
 		stateExposer:     *stateExposer,
-		eventManagers:    []EventManagerWidget{searchBox, contentBox},
-		exposers: []ExposerWidget{
+		eventManagers:    []EventManager{searchBox, contentBox},
+		exposers: []Listener{
 			searchBox,
 			searchHistoryBox,
 			contentBox,

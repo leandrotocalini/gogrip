@@ -18,14 +18,29 @@ func (s *StateExposer) getBoxItem() ui.GridItem {
 }
 
 func (s *StateExposer) listen() {
+
 	for state := range s.channel {
+		rows := [][]string{}
 		if state.total > 0 {
-			s.widget.Rows = [][]string{
-				[]string{"Search string", state.searchString},
-				[]string{"Current position", strconv.Itoa(state.position)},
-				[]string{"Amount of blocks", strconv.Itoa(state.total)},
-				[]string{"Current FilePath", state.currentBlock.GetTitle()},
+			rows = append(rows, []string{"Search string", state.searchString})
+			rows = append(rows, []string{"Current file", strconv.Itoa(state.position + 1)})
+			rows = append(rows, []string{"Amount of blocks", strconv.Itoa(state.total)})
+			if state.position > 0 {
+				rows = append(rows, []string{"Previous file", state.blocks[state.position-1].GetTitle()})
+			} else {
+				rows = append(rows, []string{"Previous file", "--"})
+
 			}
+			rows = append(rows, []string{"Current file", state.currentBlock.GetTitle()})
+			if state.position < state.total-1 {
+				rows = append(rows, []string{"Next file", state.blocks[state.position+1].GetTitle()})
+			} else {
+				rows = append(rows, []string{"Next file", "--"})
+
+			}
+		}
+		if len(rows) > 0 {
+			s.widget.Rows = rows
 		}
 	}
 }
@@ -53,7 +68,7 @@ func createStateExposer() *StateExposer {
 	sideBar.Title = "Current state"
 	sideBar.RowSeparator = false
 	sideBar.Rows = [][]string{
-		[]string{"Key", "Value"},
+		[]string{"", ""},
 	}
 	return &StateExposer{
 		widget:  sideBar,

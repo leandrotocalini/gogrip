@@ -13,7 +13,7 @@ type SearchBox struct {
 }
 
 type SearchBoxInterface interface {
-	EventManagerWidget
+	EventManager
 	getText() string
 }
 

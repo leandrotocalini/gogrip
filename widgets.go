@@ -3,17 +3,20 @@ package main
 import ui "github.com/gizak/termui/v3"
 
 type GoGripWidget interface {
-	listen()
 	getBoxItem() ui.GridItem
 }
 
-type ExposerWidget interface {
-	GoGripWidget
+type Listener interface {
+	listen()
 	expose(State)
 }
 
-type EventManagerWidget interface {
+type GoGripListenerWidget interface {
 	GoGripWidget
+	Listener
+}
+type EventManager interface {
+	GoGripListenerWidget
 	isActive() bool
 	activate()
 	deactivate()
