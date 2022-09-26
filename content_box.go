@@ -3,35 +3,61 @@ package main
 import (
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
-	"github.com/leandrotocalini/gogrip/filter"
 )
 
 type ContentBox struct {
 	widget  *widgets.Table
-	channel chan filter.BlockInterface
+	channel chan State
+	active  bool
 }
 
 type ContentBoxInterface interface {
-	listen()
-	sendEvent(filter.BlockInterface)
-}
-
-func (s *ContentBox) sendEvent(message filter.BlockInterface) {
-	s.channel <- message
+	EventManager
 }
 
 func (c *ContentBox) listen() {
-	for block := range c.channel {
-		c.widget.Rows = block.GetContent()
-		c.widget.Title = block.GetTitle()
-		c.widget.ColumnResizer()
-		c.widget.RowStyles[block.GetLine()] = ui.NewStyle(ui.ColorWhite, ui.ColorRed, ui.ModifierBold)
+	for state := range c.channel {
+		if state.total > 0 {
+			c.widget.Rows = state.currentBlock.GetContent()
+			c.widget.Title = state.currentBlock.GetTitle()
+		}
 	}
 }
 
-func createContentBox(title, text string) *ContentBox {
+func (s *ContentBox) isActive() bool {
+	return s.active
+}
+
+func (s *ContentBox) activate() {
+	s.widget.BorderStyle.Fg = ui.ColorRed
+	s.active = true
+}
+
+func (s *ContentBox) deactivate() {
+	s.widget.BorderStyle.Fg = ui.ColorWhite
+	s.active = false
+}
+func (c *ContentBox) getBoxItem() ui.GridItem {
+	return ui.NewRow((1.0/15)*13.5, c.widget)
+}
+
+func (c *ContentBox) expose(state State) {
+	c.channel <- state
+}
+
+func (c *ContentBox) newEvent(state State, message string) State {
+	switch message {
+	case "<Up>":
+		state.previousBlock()
+	case "<Down>":
+		state.nextBlock()
+	}
+	return state
+}
+
+func createContentBox() *ContentBox {
 	content := widgets.NewTable()
-	content.Title = title
+	content.Title = "Filename"
 	content.TextStyle = ui.NewStyle(ui.ColorWhite)
 	content.Rows = [][]string{
 		[]string{"", ""},
@@ -42,5 +68,9 @@ func createContentBox(title, text string) *ContentBox {
 	//content.TextAlignment = ui.AlignCenter
 	content.RowSeparator = false
 	//content.BorderStyle.Fg = ui.ColorRed
-	return &ContentBox{widget: content, channel: make(chan filter.BlockInterface)}
+	return &ContentBox{
+		widget:  content,
+		channel: make(chan State),
+		active:  false,
+	}
 }
