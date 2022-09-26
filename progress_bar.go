@@ -55,20 +55,6 @@ func (s *ProgressBar) expose(state State) {
 	s.channel <- state
 }
 
-func (s *ProgressBar) isActive() bool {
-	return s.active
-}
-
-func (s *ProgressBar) activate() {
-	s.widget.BorderStyle.Fg = ui.ColorRed
-	s.active = true
-}
-
-func (s *ProgressBar) deactivate() {
-	s.widget.BorderStyle.Fg = ui.ColorWhite
-	s.active = false
-}
-
 func createProgressBar() *ProgressBar {
 	sideBar := widgets.NewGauge()
 	sideBar.Title = "Matches"
