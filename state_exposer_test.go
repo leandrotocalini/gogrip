@@ -16,13 +16,13 @@ func TestStateExposer_updateWidgetEmpty(t *testing.T) {
 		blocks:       []BlockInterface{},
 	}
 	stateExposer.updateWidget(state)
-	assert.Equal(t, 1, len(stateExposer.widget.Rows))
+	assert.Equal(t, 0, len(stateExposer.widget.Rows))
 }
 
 func TestStateExposer_updateWidgetWithRows(t *testing.T) {
 	stateExposer := createStateExposer()
-	block1 := createBlock(2, "asd", []string{"asd"})
-	block2 := createBlock(2, "asd3", []string{"asd3"})
+	block1 := createBlock(2, "asd", []string{"asd", "22", "333"})
+	block2 := createBlock(2, "asd", []string{"asd", "22", "333"})
 	state := State{
 		position:     0,
 		total:        2,
@@ -31,5 +31,37 @@ func TestStateExposer_updateWidgetWithRows(t *testing.T) {
 		currentBlock: block1,
 	}
 	stateExposer.updateWidget(state)
-	assert.Equal(t, 6, len(stateExposer.widget.Rows))
+	assert.Equal(t, 8, len(stateExposer.widget.Rows))
+}
+
+func TestStateExposer_updateWidgetWithRowsInTheMiddle(t *testing.T) {
+	stateExposer := createStateExposer()
+	block1 := createBlock(2, "asd", []string{"asd", "22", "333"})
+	block2 := createBlock(2, "asd", []string{"asd", "22", "333"})
+	block3 := createBlock(2, "asd", []string{"asd", "22", "333"})
+	state := State{
+		position:     1,
+		total:        3,
+		searchString: "",
+		blocks:       []BlockInterface{block1, block2, block3},
+		currentBlock: block2,
+	}
+	stateExposer.updateWidget(state)
+	assert.Equal(t, 8, len(stateExposer.widget.Rows))
+}
+
+func TestStateExposer_updateWidgetWithRowsInTheEnd(t *testing.T) {
+	stateExposer := createStateExposer()
+	block1 := createBlock(2, "asd", []string{"asd", "22", "333"})
+	block2 := createBlock(2, "asd", []string{"asd", "22", "333"})
+	block3 := createBlock(2, "asd", []string{"asd", "22", "333"})
+	state := State{
+		position:     2,
+		total:        3,
+		searchString: "",
+		blocks:       []BlockInterface{block1, block2, block3},
+		currentBlock: block2,
+	}
+	stateExposer.updateWidget(state)
+	assert.Equal(t, 8, len(stateExposer.widget.Rows))
 }

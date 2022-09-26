@@ -22,6 +22,9 @@ func (s *StateExposer) updateWidget(state State) {
 	if state.total > 0 {
 		rows = append(rows, []string{"Search string", state.searchString})
 		rows = append(rows, []string{"Current file", strconv.Itoa(state.position + 1)})
+		rows = append(rows, []string{"Line number", strconv.Itoa(state.currentBlock.GetLine())})
+		rows = append(rows, []string{"Current Line", state.currentBlock.GetMatchedWord()})
+
 		rows = append(rows, []string{"Amount of blocks", strconv.Itoa(state.total)})
 		if state.position > 0 {
 			rows = append(rows, []string{"Previous file", state.blocks[state.position-1].GetTitle()})
@@ -37,9 +40,9 @@ func (s *StateExposer) updateWidget(state State) {
 
 		}
 	}
-	if len(rows) > 0 {
-		s.widget.Rows = rows
-	}
+
+	s.widget.Rows = rows
+
 }
 
 func (s *StateExposer) listen() {
@@ -53,14 +56,16 @@ func (s *StateExposer) expose(state State) {
 }
 
 func createStateExposer() *StateExposer {
-	sideBar := widgets.NewTable()
-	sideBar.Title = "Current state"
-	sideBar.RowSeparator = false
-	sideBar.Rows = [][]string{
+	stateExposer := widgets.NewTable()
+	stateExposer.Title = "Current state"
+	stateExposer.RowSeparator = true
+	stateExposer.BorderStyle = ui.NewStyle(ui.ColorGreen)
+
+	stateExposer.Rows = [][]string{
 		[]string{"", ""},
 	}
 	return &StateExposer{
-		widget:  sideBar,
+		widget:  stateExposer,
 		active:  false,
 		channel: make(chan State),
 	}

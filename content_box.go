@@ -20,8 +20,6 @@ func (c *ContentBox) listen() {
 		if state.total > 0 {
 			c.widget.Rows = state.currentBlock.GetContent()
 			c.widget.Title = state.currentBlock.GetTitle()
-			c.widget.ColumnResizer()
-			c.widget.RowStyles[state.currentBlock.GetLine()] = ui.NewStyle(ui.ColorWhite, ui.ColorRed, ui.ModifierBold)
 		}
 	}
 }

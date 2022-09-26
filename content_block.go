@@ -53,7 +53,13 @@ func (block *Block) GetContent() [][]string {
 		[]string{"", ""},
 	}
 	for i := firstLine; i < lastLine; i++ {
-		line := []string{fmt.Sprintf("%d", i), block.Content[i]}
+		lineCounter := fmt.Sprintf("%d", i)
+		if i == block.Line {
+			lineCounter = fmt.Sprintf("%d>>>", i)
+
+		}
+		line := []string{lineCounter, block.Content[i]}
+
 		rows = append(rows, line)
 	}
 	return rows

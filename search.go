@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	MAX_LINES = 7
+	MAX_LINES = 12
 )
 
 func isEnabled(path string) bool {
@@ -57,11 +57,10 @@ func searchInFile(query, filePath string, blockChannel chan *Block) {
 		counter := 0
 		for scanner.Scan() {
 			text := scanner.Text()
-			text = strings.Replace(text, "\t", "  ", 10)
 			if strings.Contains(text, query) {
 				lineNumbers = append(lineNumbers, counter)
 			}
-
+			text = strings.Replace(text, "\t", "  ", 10)
 			content = append(content, text)
 			counter++
 		}
