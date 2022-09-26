@@ -16,7 +16,7 @@ func TestStateExposer_updateWidgetEmpty(t *testing.T) {
 		blocks:       []BlockInterface{},
 	}
 	stateExposer.updateWidget(state)
-	assert.Equal(t, 0, len(stateExposer.widget.Rows))
+	assert.Equal(t, 1, len(stateExposer.widget.Rows))
 }
 
 func TestStateExposer_updateWidgetWithRows(t *testing.T) {

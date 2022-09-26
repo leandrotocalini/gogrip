@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -26,18 +27,24 @@ func isEnabled(path string) bool {
 	if err != nil {
 		return false
 	}
-	file.Seek(0, 0)
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		return false
+	}
 	contentType := http.DetectContentType(buffer)
 	return contentType == "text/plain; charset=utf-8"
 }
 
 func _getFiles(rootPath string, filesInChan chan string) {
-	filepath.Walk(rootPath, func(path string, file os.FileInfo, err error) error {
+	err := filepath.Walk(rootPath, func(path string, file os.FileInfo, err error) error {
 		if !file.IsDir() && isEnabled(path) {
 			filesInChan <- path
 		}
 		return nil
 	})
+	if err != nil {
+		log.Println(err)
+	}
 	close(filesInChan)
 }
 
