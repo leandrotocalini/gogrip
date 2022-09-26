@@ -40,9 +40,9 @@ func (s *StateExposer) updateWidget(state State) {
 
 		}
 	}
-
-	s.widget.Rows = rows
-
+	if len(rows) > 0 {
+		s.widget.Rows = rows
+	}
 }
 
 func (s *StateExposer) listen() {
@@ -57,9 +57,9 @@ func (s *StateExposer) expose(state State) {
 
 func createStateExposer() *StateExposer {
 	stateExposer := widgets.NewTable()
-	stateExposer.Title = "Current state"
+	stateExposer.Title = "State"
 	stateExposer.RowSeparator = true
-	stateExposer.BorderStyle = ui.NewStyle(ui.ColorGreen)
+	stateExposer.BorderStyle = ui.NewStyle(ui.ColorWhite)
 
 	stateExposer.Rows = [][]string{
 		[]string{"", ""},
