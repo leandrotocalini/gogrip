@@ -23,7 +23,7 @@ jobs:
       - run: go build .
       - run: go install .
       - run: go test ./...
-      - run: golint .
+      - run: go get -u golang.org/x/lint/golint && golint .
       - run: go vet .
 
       
