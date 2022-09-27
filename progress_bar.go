@@ -39,7 +39,7 @@ func (s *ProgressBar) refresh() {
 	} else if s.position == 0 {
 		s.widget.Percent = 0
 	} else {
-		s.widget.Percent = (s.position + 1) * 100 / s.total
+		s.widget.Percent = s.position * 100 / s.total
 	}
 
 	if s.widget.Percent > 80 {
