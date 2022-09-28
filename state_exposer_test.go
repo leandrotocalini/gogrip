@@ -31,7 +31,7 @@ func TestStateExposer_updateWidgetWithRows(t *testing.T) {
 		currentBlock: block1,
 	}
 	stateExposer.updateWidget(state)
-	assert.Equal(t, 8, len(stateExposer.widget.Rows))
+	assert.Equal(t, 9, len(stateExposer.widget.Rows))
 }
 
 func TestStateExposer_updateWidgetWithRowsInTheMiddle(t *testing.T) {
@@ -47,7 +47,7 @@ func TestStateExposer_updateWidgetWithRowsInTheMiddle(t *testing.T) {
 		currentBlock: block2,
 	}
 	stateExposer.updateWidget(state)
-	assert.Equal(t, 8, len(stateExposer.widget.Rows))
+	assert.Equal(t, 9, len(stateExposer.widget.Rows))
 }
 
 func TestStateExposer_updateWidgetWithRowsInTheEnd(t *testing.T) {
@@ -63,5 +63,5 @@ func TestStateExposer_updateWidgetWithRowsInTheEnd(t *testing.T) {
 		currentBlock: block2,
 	}
 	stateExposer.updateWidget(state)
-	assert.Equal(t, 8, len(stateExposer.widget.Rows))
+	assert.Equal(t, 9, len(stateExposer.widget.Rows))
 }
