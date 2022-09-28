@@ -24,6 +24,7 @@ func (s *StateExposer) updateWidget(state State) {
 		rows = append(rows, []string{"Current file", strconv.Itoa(state.position + 1)})
 		rows = append(rows, []string{"Line number", strconv.Itoa(state.currentBlock.GetLine())})
 		rows = append(rows, []string{"Current Line", state.currentBlock.GetMatchedWord()})
+		rows = append(rows, []string{"Cached", strconv.FormatBool(state.cached)})
 
 		rows = append(rows, []string{"Amount of blocks", strconv.Itoa(state.total)})
 		if state.position > 0 {
