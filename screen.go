@@ -135,6 +135,7 @@ func CreateInterface() *Screen {
 			total:        0,
 			searchString: "",
 			blocks:       []BlockInterface{},
+			cached:       false,
 		},
 		active: false,
 		events: ui.PollEvents(),
