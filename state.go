@@ -6,6 +6,7 @@ type State struct {
 	total        int
 	position     int
 	blocks       []BlockInterface
+	cached       bool
 }
 
 func (s *State) moveToBlock(position int) {

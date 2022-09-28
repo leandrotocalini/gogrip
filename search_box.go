@@ -1,8 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
+	"github.com/leandrotocalini/mimaps"
 )
 
 type SearchBox struct {
@@ -10,6 +14,7 @@ type SearchBox struct {
 	widget     *widgets.Paragraph
 	channel    chan string
 	active     bool
+	cache      mimaps.CachedMap[string, State]
 }
 
 type SearchBoxInterface interface {
@@ -19,7 +24,12 @@ type SearchBoxInterface interface {
 
 func (s *SearchBox) search(state State) State {
 	searchText := s.getText()
+	if cachedState, err := s.cache.Get(searchText); err == nil {
+		cachedState.cached = true
+		return cachedState
+	}
 	state.searchString = searchText
+	state.cached = false
 	buffer := 2
 	state.blocks = []BlockInterface{}
 	state.position = 0
@@ -33,6 +43,10 @@ func (s *SearchBox) search(state State) State {
 	}
 	state.total = len(state.blocks)
 	state.moveToBlock(0)
+	if err := s.cache.Put(searchText, state); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	return state
 }
 
@@ -94,5 +108,6 @@ func createSearchBox() *SearchBox {
 		searchText: "",
 		channel:    make(chan string, 10),
 		active:     false,
+		cache:      mimaps.CreateCachedMap[string, State](600),
 	}
 }

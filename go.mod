@@ -1,14 +1,18 @@
 module github.com/leandrotocalini/gogrip
 
-go 1.16
+go 1.18
 
 require (
-	9fans.net/go v0.0.4 // indirect
-	github.com/gizak/termui/v3 v3.1.0 // indirect
-	github.com/nsf/gocode v0.0.0-20190302080247-5bee97b48836 // indirect
-	github.com/rogpeppe/godef v1.1.2 // indirect
-	github.com/stretchr/testify v1.8.0 // indirect
-	golang.org/x/lint v0.0.0-20210508222113-6edffad5e616 // indirect
-	golang.org/x/tools v0.1.12 // indirect
-	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
+	github.com/gizak/termui/v3 v3.1.0
+	github.com/leandrotocalini/mimaps v0.0.0-20220928111952-dd186a96e4da
+	github.com/stretchr/testify v1.8.0
+)
+
+require (
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/mattn/go-runewidth v0.0.2 // indirect
+	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
+	github.com/nsf/termbox-go v0.0.0-20190121233118-02980233997d // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
