@@ -15,11 +15,10 @@ func TestScreen_InterfaceExit(t *testing.T) {
 
 func TestScreen_MoveUp(t *testing.T) {
 	userInterface := CreateInterface()
-	for _, w := range userInterface.exposers {
+	for _, w := range userInterface.listeners {
 		go w.listen()
 	}
-	key := "<Up>"
-	result := userInterface.keyEventHandler(key)
+	result := userInterface.keyEventHandler(PREVIOUS_FILE_KEY)
 	assert.True(t, result)
 }
 
@@ -27,14 +26,12 @@ func TestScreen_MoveDown(t *testing.T) {
 	userInterface := CreateInterface()
 	userInterface.searchBox.deactivate()
 	userInterface.contentBox.activate()
-	for _, w := range userInterface.exposers {
+	for _, w := range userInterface.listeners {
 		go w.listen()
 	}
-	key := "<Up>"
-	result := userInterface.keyEventHandler(key)
+	result := userInterface.keyEventHandler(PREVIOUS_FILE_KEY)
 	assert.True(t, result)
-	key = "<Down>"
-	result = userInterface.keyEventHandler(key)
+	result = userInterface.keyEventHandler(NEXT_FILE_KEY)
 	assert.True(t, result)
 }
 

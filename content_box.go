@@ -20,6 +20,14 @@ func (c *ContentBox) listen() {
 		if state.total > 0 {
 			c.widget.Rows = state.currentBlock.GetContent()
 			c.widget.Title = state.currentBlock.GetTitle()
+			for k := range c.widget.RowStyles {
+				delete(c.widget.RowStyles, k)
+			}
+			c.widget.RowStyles[state.currentBlock.HighlightCursorLine()] = ui.NewStyle(ui.ColorYellow)
+			if line, err := state.currentBlock.HighlightMatchedLine(); err == nil {
+				c.widget.RowStyles[line] = ui.NewStyle(ui.ColorRed)
+
+			}
 		}
 	}
 }
@@ -46,11 +54,17 @@ func (c *ContentBox) expose(state State) {
 }
 
 func (c *ContentBox) newEvent(state State, message string) State {
-	switch message {
-	case "<Up>":
-		state.previousBlock()
-	case "<Down>":
-		state.nextBlock()
+	if c.isActive() {
+		switch message {
+		case "<Left>":
+			state.previousBlock()
+		case "<Right>":
+			state.nextBlock()
+		case "<Up>":
+			state.currentBlock.FocusUp()
+		case "<Down>":
+			state.currentBlock.FocusDown()
+		}
 	}
 	return state
 }

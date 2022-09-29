@@ -74,6 +74,10 @@ func (s *SearchBox) getText() string {
 }
 
 func (s *SearchBox) newEvent(state State, message string) State {
+	if !s.isActive() {
+		return state
+	}
+
 	if message == "<Backspace>" && len(s.searchText) > 0 {
 		s.searchText = s.searchText[:len(s.searchText)-1]
 		s.widget.Text = s.searchText
