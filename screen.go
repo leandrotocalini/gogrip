@@ -55,7 +55,10 @@ func (u *Screen) sendEventToActiveEventManager(key string) {
 		if val.isActive() {
 			u.state = val.newEvent(u.state, key)
 			u.propagateState()
+		} else {
+			val.newEvent(u.state, key)
 		}
+
 	}
 }
 func (u *Screen) keyEventHandler(key string) bool {

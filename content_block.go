@@ -3,10 +3,11 @@ package main
 import "fmt"
 
 type Block struct {
-	Line     int
-	Content  []string
-	FilePath string
-	Position int
+	Line        int
+	FocusedLine int
+	Content     []string
+	FilePath    string
+	Position    int
 }
 
 type BlockInterface interface {
@@ -16,6 +17,8 @@ type BlockInterface interface {
 	SetPosition(int)
 	GetPosition() int
 	GetMatchedWord() string
+	FocusUp()
+	FocusDown()
 }
 
 func (block *Block) GetTitle() string {
@@ -35,20 +38,46 @@ func (block *Block) SetPosition(pos int) {
 }
 
 func (block *Block) GetContent() [][]string {
-	firstLine := block.Line
-	lastLine := block.Line + 1
+	return block.GetContentFromLine(block.FocusedLine)
+}
+
+func (block *Block) FocusUp() {
+	if block.FocusedLine > 0 {
+		block.FocusedLine -= 1
+	}
+}
+
+func (block *Block) FocusDown() {
+	if block.FocusedLine < len(block.Content) {
+		block.FocusedLine += 1
+	}
+}
+
+func (block *Block) GetContentFromLine(line int) [][]string {
+	firstLine := line
+	lastLine := line + 1
 	contentLen := len(block.Content)
 	if firstLine-MAX_LINES >= 0 {
 		firstLine -= MAX_LINES
 	} else {
 		firstLine = 0
 	}
-
-	if lastLine+MAX_LINES > contentLen {
-		lastLine = contentLen
+	if firstLine == 0 {
+		lastLine = MAX_LINES * 2
+		if lastLine > contentLen {
+			lastLine = contentLen
+		}
 	} else {
-		lastLine += MAX_LINES - 1
+		if lastLine+MAX_LINES > contentLen {
+			lastLine = contentLen
+			if lastLine-(MAX_LINES*2) >= 0 {
+				firstLine = lastLine - (MAX_LINES * 2)
+			}
+		} else {
+			lastLine += MAX_LINES - 1
+		}
 	}
+
 	rows := [][]string{
 		[]string{"", ""},
 	}
@@ -71,8 +100,9 @@ func (block *Block) GetLine() int {
 
 func createBlock(lineNumber int, filePath string, content []string) *Block {
 	return &Block{
-		Line:     lineNumber,
-		FilePath: filePath,
-		Content:  content,
+		Line:        lineNumber,
+		FocusedLine: lineNumber,
+		FilePath:    filePath,
+		Content:     content,
 	}
 }

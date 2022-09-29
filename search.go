@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	MAX_LINES = 12
+	MAX_LINES = 20
 )
 
 func isEnabled(path string) bool {
