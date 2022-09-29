@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type Block struct {
 	MatchedLine int
@@ -90,7 +93,7 @@ func (block *Block) HighlightMatchedLine() (int, error) {
 	if l >= 0 {
 		return l, nil
 	}
-	return l, nil
+	return l, errors.New("out of window")
 }
 
 func (block *Block) GetContent() [][]string {
