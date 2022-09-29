@@ -3,8 +3,10 @@ package main
 import "fmt"
 
 type Block struct {
-	Line        int
-	FocusedLine int
+	MatchedLine int
+	CursorLine  int
+	firstLine   int
+	lastLine    int
 	Content     []string
 	FilePath    string
 	Position    int
@@ -19,6 +21,8 @@ type BlockInterface interface {
 	GetMatchedWord() string
 	FocusUp()
 	FocusDown()
+	HighlightCursorLine() int
+	HighlightMatchedLine() (int, error)
 }
 
 func (block *Block) GetTitle() string {
@@ -26,7 +30,7 @@ func (block *Block) GetTitle() string {
 }
 
 func (block *Block) GetMatchedWord() string {
-	return block.Content[block.Line]
+	return block.Content[block.MatchedLine]
 }
 
 func (block *Block) GetPosition() int {
@@ -37,25 +41,21 @@ func (block *Block) SetPosition(pos int) {
 	block.Position = pos
 }
 
-func (block *Block) GetContent() [][]string {
-	return block.GetContentFromLine(block.FocusedLine)
-}
-
 func (block *Block) FocusUp() {
-	if block.FocusedLine > 0 {
-		block.FocusedLine -= 1
+	if block.CursorLine > 0 {
+		block.CursorLine -= 1
 	}
 }
 
 func (block *Block) FocusDown() {
-	if block.FocusedLine < len(block.Content) {
-		block.FocusedLine += 1
+	if block.CursorLine < len(block.Content) {
+		block.CursorLine += 1
 	}
 }
 
-func (block *Block) GetContentFromLine(line int) [][]string {
-	firstLine := line
-	lastLine := line + 1
+func (block *Block) setLines() {
+	firstLine := block.CursorLine
+	lastLine := firstLine + 1
 	contentLen := len(block.Content)
 	if firstLine-MAX_LINES >= 0 {
 		firstLine -= MAX_LINES
@@ -77,16 +77,29 @@ func (block *Block) GetContentFromLine(line int) [][]string {
 			lastLine += MAX_LINES - 1
 		}
 	}
+	block.firstLine = firstLine
+	block.lastLine = lastLine
+}
 
+func (block *Block) HighlightCursorLine() int {
+	return block.CursorLine - block.firstLine + 1
+}
+
+func (block *Block) HighlightMatchedLine() (int, error) {
+	l := block.MatchedLine - block.firstLine + 1
+	if l >= 0 {
+		return l, nil
+	}
+	return l, nil
+}
+
+func (block *Block) GetContent() [][]string {
+	block.setLines()
 	rows := [][]string{
 		[]string{"", ""},
 	}
-	for i := firstLine; i < lastLine; i++ {
+	for i := block.firstLine; i < block.lastLine; i++ {
 		lineCounter := fmt.Sprintf("%d", i)
-		if i == block.Line {
-			lineCounter = fmt.Sprintf("%d>>>", i)
-
-		}
 		line := []string{lineCounter, block.Content[i]}
 
 		rows = append(rows, line)
@@ -95,13 +108,13 @@ func (block *Block) GetContentFromLine(line int) [][]string {
 }
 
 func (block *Block) GetLine() int {
-	return block.Line
+	return block.MatchedLine
 }
 
 func createBlock(lineNumber int, filePath string, content []string) *Block {
 	return &Block{
-		Line:        lineNumber,
-		FocusedLine: lineNumber,
+		MatchedLine: lineNumber,
+		CursorLine:  lineNumber,
 		FilePath:    filePath,
 		Content:     content,
 	}

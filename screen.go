@@ -13,7 +13,7 @@ type Screen struct {
 	searchHistoryBox SearchHistoryBoxInterface
 	stateExposer     StateExposer
 	eventManagers    []EventManager
-	exposers         []Listener
+	listeners        []Listener
 	grid             *ui.Grid
 	state            State
 	active           bool
@@ -21,7 +21,7 @@ type Screen struct {
 }
 
 func (u *Screen) propagateState() {
-	for _, w := range u.exposers {
+	for _, w := range u.listeners {
 		w.expose(u.state)
 	}
 	u.renderScreen()
@@ -33,7 +33,7 @@ func (u *Screen) renderScreen() {
 	}
 }
 
-func (u *Screen) focusOnNextWidget() {
+func (u *Screen) nextEventManager() {
 	for idx, val := range u.eventManagers {
 		if val.isActive() {
 			val.deactivate()
@@ -50,11 +50,12 @@ func (u *Screen) focusOnNextWidget() {
 	u.renderScreen()
 }
 
-func (u *Screen) sendEventToActiveEventManager(key string) {
+func (u *Screen) propagateEvent(key string) {
 	for _, val := range u.eventManagers {
 		if val.isActive() {
 			u.state = val.newEvent(u.state, key)
 			u.propagateState()
+
 		} else {
 			val.newEvent(u.state, key)
 		}
@@ -66,9 +67,9 @@ func (u *Screen) keyEventHandler(key string) bool {
 	case "<C-c>":
 		return false
 	case "<Tab>":
-		u.focusOnNextWidget()
+		u.nextEventManager()
 	default:
-		u.sendEventToActiveEventManager(key)
+		u.propagateEvent(key)
 	}
 	return true
 }
@@ -76,7 +77,7 @@ func (u *Screen) keyEventHandler(key string) bool {
 func (u *Screen) run() {
 	u.setScreen()
 	u.renderScreen()
-	for _, w := range u.exposers {
+	for _, w := range u.listeners {
 		go w.listen()
 	}
 	ticker := time.NewTicker(time.Second).C
@@ -125,7 +126,7 @@ func CreateInterface() *Screen {
 		searchHistoryBox: searchHistoryBox,
 		stateExposer:     *stateExposer,
 		eventManagers:    []EventManager{searchBox, contentBox},
-		exposers: []Listener{
+		listeners: []Listener{
 			searchBox,
 			searchHistoryBox,
 			contentBox,
