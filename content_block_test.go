@@ -24,7 +24,7 @@ func Test_createBlockMoreContent(t *testing.T) {
 	block.Position = 1
 	assert.Equal(t, 2, block.GetLine())
 	assert.Equal(t, 1, block.GetPosition())
-	assert.Equal(t, 15, len(block.GetContent()))
+	assert.Equal(t, 41, len(block.GetContent()))
 }
 
 func Test_createBlockMoreContentMidle(t *testing.T) {
@@ -36,5 +36,5 @@ func Test_createBlockMoreContentMidle(t *testing.T) {
 	block.Position = 1
 	assert.Equal(t, 50, block.GetLine())
 	assert.Equal(t, 1, block.GetPosition())
-	assert.Equal(t, 25, len(block.GetContent()))
+	assert.Equal(t, 41, len(block.GetContent()))
 }

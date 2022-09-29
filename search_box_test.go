@@ -31,10 +31,11 @@ func Test_SearchBoxListenText(t *testing.T) {
 		searchString: "",
 		blocks:       []BlockInterface{},
 	}
+	searchH.activate()
 	state = searchH.newEvent(state, "b")
 	searchH.newEvent(state, "a")
 	searchH.newEvent(state, "t")
-	state = searchH.newEvent(state, "<Enter>")
+	state = searchH.newEvent(state, ENTER_KEY)
 	assert.Equal(t, searchH.getText(), "bat")
 	assert.Equal(t, searchH.getText(), state.searchString)
 
@@ -42,6 +43,8 @@ func Test_SearchBoxListenText(t *testing.T) {
 
 func Test_SearchBoxListenBackSpace(t *testing.T) {
 	searchH := createSearchBox()
+	searchH.activate()
+
 	state := State{
 		position:     0,
 		total:        0,
@@ -51,13 +54,14 @@ func Test_SearchBoxListenBackSpace(t *testing.T) {
 	state = searchH.newEvent(state, "b")
 	state = searchH.newEvent(state, "<Backspace>")
 	searchH.newEvent(state, "t")
-	state = searchH.newEvent(state, "<Enter>")
+	state = searchH.newEvent(state, ENTER_KEY)
 	assert.Equal(t, searchH.getText(), state.searchString)
 	assert.Equal(t, searchH.getText(), "t")
 }
 
 func Test_SearchBoxListenTextSpace(t *testing.T) {
 	searchH := createSearchBox()
+	searchH.activate()
 	state := State{
 		position:     0,
 		total:        0,
