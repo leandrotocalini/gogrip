@@ -14,7 +14,7 @@ type SearchBox struct {
 	widget     *widgets.Paragraph
 	channel    chan string
 	active     bool
-	cache      mimaps.CachedMap[string, State]
+	cache      mimaps.InMemoryCache[string, State]
 }
 
 type SearchBoxInterface interface {
@@ -91,6 +91,9 @@ func (s *SearchBox) newEvent(state State, message string) State {
 	} else if len(message) == 1 {
 		s.searchText = s.searchText + message
 		s.widget.Text = s.searchText
+	} else {
+		s.widget.Text = message
+
 	}
 	return state
 }
@@ -112,6 +115,6 @@ func createSearchBox() *SearchBox {
 		searchText: "",
 		channel:    make(chan string, 10),
 		active:     false,
-		cache:      mimaps.CreateCachedMap[string, State](600),
+		cache:      mimaps.NewInMemoryCache[string, State](600),
 	}
 }

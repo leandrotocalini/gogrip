@@ -1,5 +1,5 @@
 # gogrip
-![Coverage](https://img.shields.io/badge/Coverage-85.3%25-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-85.1%25-brightgreen)
 
 A cli tool similar to grep but it show the entired block of lines around the matched line.
 

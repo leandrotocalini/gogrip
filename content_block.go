@@ -24,6 +24,8 @@ type BlockInterface interface {
 	GetMatchedWord() string
 	FocusUp()
 	FocusDown()
+	FocusPageUp()
+	FocusPageDown()
 	HighlightCursorLine() int
 	HighlightMatchedLine() (int, error)
 }
@@ -56,6 +58,21 @@ func (block *Block) FocusDown() {
 	}
 }
 
+func (block *Block) FocusPageUp() {
+	if block.CursorLine-MAX_LINES >= 0 {
+		block.CursorLine -= MAX_LINES
+	} else {
+		block.CursorLine = 0
+	}
+}
+
+func (block *Block) FocusPageDown() {
+	if block.CursorLine+MAX_LINES < len(block.Content) {
+		block.CursorLine += MAX_LINES
+	} else {
+		block.CursorLine = len(block.Content) - 1
+	}
+}
 func (block *Block) setLines() {
 	firstLine := block.CursorLine
 	lastLine := firstLine + 1
