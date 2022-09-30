@@ -106,3 +106,39 @@ func Test_createBlockFocusDownEndOfFile(t *testing.T) {
 	assert.NotEqual(t, err, nil)
 	assert.Equal(t, -59, val)
 }
+
+func Test_createBlockFocusPageDownEndOfFile(t *testing.T) {
+	content := []string{}
+	for i := 0; i < 100; i++ {
+		content = append(content, fmt.Sprintf("content line: %d>>>", i))
+	}
+	block := createBlock(0, "asd", content)
+	block.Position = 1
+	for i := 0; i < 10; i++ {
+		block.FocusPageDown()
+	}
+
+	assert.Equal(t, 41, len(block.GetContent()))
+	assert.Equal(t, 40, block.HighlightCursorLine())
+	val, err := block.HighlightMatchedLine()
+	assert.NotEqual(t, err, nil)
+	assert.Equal(t, -59, val)
+}
+
+func Test_createBlockFocusPageUpBeginningOfFile(t *testing.T) {
+	content := []string{}
+	for i := 0; i < 100; i++ {
+		content = append(content, fmt.Sprintf("content line: %d>>>", i))
+	}
+	block := createBlock(50, "asd", content)
+	block.Position = 1
+	for i := 0; i < 40; i++ {
+		block.FocusPageUp()
+	}
+
+	assert.Equal(t, 41, len(block.GetContent()))
+	assert.Equal(t, 1, block.HighlightCursorLine())
+	val, err := block.HighlightMatchedLine()
+	assert.Equal(t, err, nil)
+	assert.Equal(t, 51, val)
+}
