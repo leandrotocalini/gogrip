@@ -64,6 +64,11 @@ func (c *ContentBox) newEvent(state State, message string) State {
 			state.currentBlock.FocusUp()
 		case "<Down>":
 			state.currentBlock.FocusDown()
+		case "<PageDown>":
+			state.currentBlock.FocusPageDown()
+		case "<PageUp>":
+			state.currentBlock.FocusPageUp()
+
 		}
 	}
 	return state
